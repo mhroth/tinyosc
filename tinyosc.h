@@ -19,6 +19,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct tosc_tinyosc {
   const char *address;
   const char *format;
@@ -34,5 +38,9 @@ int32_t tosc_getNextInt32(tosc_tinyosc *o);
 float tosc_getNextFloat(tosc_tinyosc *o);
 
 const char *tosc_getNextString(tosc_tinyosc *o);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _TINY_OSC_

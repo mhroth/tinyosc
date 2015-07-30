@@ -1,6 +1,6 @@
 # TinyOSC
 
-TinyOSC is a minimal Open Sound Control (OSC) library written in C. The typical use case is to parse a raw received buffer directly from a socket.
+TinyOSC is a minimal [Open Sound Control](http://opensoundcontrol.org/) (OSC) library written in C. The typical use case is to parse a raw received buffer directly from a socket.
 
 ## Code Example
 ```C

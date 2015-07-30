@@ -4,6 +4,8 @@ TinyOSC is a minimal Open Sound Control (OSC) library written in C. The typical 
 
 ## Code Example
 ```C
+#include "tinyosc.h"
+
 tosc_tinyosc osc; // declare the TinyOSC structure
 char buffer[1024]; // declare a buffer into which to read the socket contents
 int len = 0; // the number of bytes read from the socket

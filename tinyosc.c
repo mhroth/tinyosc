@@ -16,10 +16,11 @@
 
 #include <netinet/in.h>
 #include <stddef.h>
+#include <stdarg.h>
 #include "tinyosc.h"
 
 // http://opensoundcontrol.org/spec-1_0
-int tosc_init(tosc_tinyosc *o, const char *buffer, const int len) {
+int tosc_read(tosc_tinyosc *o, const char *buffer, const int len) {
   // extract the address
   o->address = buffer; // address string is null terminated
   // NOTE(mhroth): if there's a comma in the address, that's weird
@@ -44,13 +45,15 @@ int tosc_init(tosc_tinyosc *o, const char *buffer, const int len) {
 }
 
 int32_t tosc_getNextInt32(tosc_tinyosc *o) {
-  const int32_t i = (int32_t) ntohl(*((uint32_t *) o->marker)); // convert from big-endian
+  // convert from big-endian (network btye order)
+  const int32_t i = (int32_t) ntohl(*((uint32_t *) o->marker));
   o->marker += 4;
   return i;
 }
 
 float tosc_getNextFloat(tosc_tinyosc *o) {
-  const uint32_t i = ntohl(*((uint32_t *) o->marker)); // convert from big-endian
+  // convert from big-endian (network btye order)
+  const uint32_t i = ntohl(*((uint32_t *) o->marker));
   o->marker += 4;
   return *((float *) (&i));
 }
@@ -64,4 +67,50 @@ const char *tosc_getNextString(tosc_tinyosc *o) {
   ++i; while (i & 0x3) ++i; // advance to next multiple of 4
   o->marker = o->buffer + i;
   return s;
+}
+
+int tosc_write(char *buffer, const int len,
+    const char *address, const char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+
+  int i = strlen(address);
+  if (address == NULL || i > len) return -1;
+  strcpy(buffer, address);
+  ++i; while (i & 0x3) ++i;
+  buffer[i] = ','; ++i;
+  i += strlen(format);
+  if (format == NULL || i > len) return -2;
+  strcpy(buffer+i, format);
+  ++i; while (i & 0x3) ++i;
+
+  for (int j = 0; format[j] != '\0'; ++j) {
+    case 'f': {
+      if (i + 4 >= len) return -3;
+      const float f = (float) va_arg(ap, double));
+      *((unit32_t *) buffer+i) = htonl(*((unit32_t *) &f));
+      i += 4;
+      break;
+    }
+    case 'i': {
+      if (i + 4 >= len) return -3;
+      const uint32_t k = (uint32_t) va_arg(ap, int));
+      *((unit32_t *) buffer+i) = htonl(k);
+      i += 4;
+      break;
+    }
+    case 's': {
+      const char *str = (const char *) va_arg(ap, void *))
+      const int s_len = strlen(str);
+      if (i + s_len >= len) return -3;
+      strcpy(buffer+i, str);
+      i += s_len;
+      while (i & 0x3) ++i;
+      break;
+    }
+    default: continue;
+  }
+
+  va_end(ap);
+  return i; // return the total number of bytes written
 }

@@ -32,7 +32,7 @@ typedef struct tosc_tinyosc {
 } tosc_tinyosc;
 
 
-int tosc_init(tosc_tinyosc *o, const char *buffer, const int len);
+int tosc_read(tosc_tinyosc *o, const char *buffer, const int len);
 
 // returns the next 32-bit int. Does not check buffer bounds.
 int32_t tosc_getNextInt32(tosc_tinyosc *o);
@@ -42,6 +42,9 @@ float tosc_getNextFloat(tosc_tinyosc *o);
 
 // returns the next string, or NULL if the buffer length is exceeded.
 const char *tosc_getNextString(tosc_tinyosc *o);
+
+int tosc_write(char *buffer, const int len, const char *address,
+    const char *fmt, ...);
 
 #ifdef __cplusplus
 }

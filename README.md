@@ -1,6 +1,6 @@
 # TinyOSC
 
-TinyOSC is a minimal [Open Sound Control](http://opensoundcontrol.org/) (OSC) library written in C. The typical use case is to parse a raw received buffer directly from a socket.
+TinyOSC is a minimal [Open Sound Control](http://opensoundcontrol.org/) (OSC) library written in C. The typical use case is to parse a raw buffer received directly from a socket. Given the limited nature of the library it also tends to be quite fast. It doesn't hold on to much state and it doesn't do much error checking. If you have a good idea of what OSC packets you will receive and need to process them quickly, this library might be for you.
 
 ## Code Example
 ```C
@@ -22,6 +22,7 @@ while ((len = READ_BYTES_FROM_SOCKET(buffer)) > 0) {
       switch (osc.format[i]) {
         case 'f': printf("%g ", tosc_getNextFloat(&osc)); break;
         case 'i': printf("%i ", tosc_getNextInt32(&osc)); break;
+        // returns NULL if the buffer length is exceeded
         case 's': printf("%s ", tosc_getNextString(&osc)); break;
         default: continue;
       }

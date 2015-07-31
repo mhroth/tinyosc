@@ -17,6 +17,7 @@
 #include <netinet/in.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <string.h>
 #include "tinyosc.h"
 
 // http://opensoundcontrol.org/spec-1_0
@@ -59,8 +60,7 @@ float tosc_getNextFloat(tosc_tinyosc *o) {
 }
 
 const char *tosc_getNextString(tosc_tinyosc *o) {
-  // TODO(mhroth): test this
-  int i = o->marker - o->buffer; // offset
+  int i = (int) (o->marker - o->buffer); // offset
   const char *s = o->marker;
   while (i < o->len && s[i] != '\0') ++i;
   if (i == o->len) return NULL;
@@ -74,41 +74,44 @@ int tosc_write(char *buffer, const int len,
   va_list ap;
   va_start(ap, format);
 
-  int i = strlen(address);
-  if (address == NULL || i > len) return -1;
+  memset(buffer, 0, len); // clear the buffer, just in case
+  int i = (int) strlen(address);
+  if (address == NULL || i >= len) return -1;
   strcpy(buffer, address);
   ++i; while (i & 0x3) ++i;
-  buffer[i] = ','; ++i;
-  i += strlen(format);
-  if (format == NULL || i > len) return -2;
+  buffer[i++] = ',';
+  int s_len = (int) strlen(format);
+  if (format == NULL || (i + s_len) >= len) return -2;
   strcpy(buffer+i, format);
-  ++i; while (i & 0x3) ++i;
+  i += (s_len + 1); while (i & 0x3) ++i;
 
   for (int j = 0; format[j] != '\0'; ++j) {
-    case 'f': {
-      if (i + 4 >= len) return -3;
-      const float f = (float) va_arg(ap, double));
-      *((unit32_t *) buffer+i) = htonl(*((unit32_t *) &f));
-      i += 4;
-      break;
+    switch (format[j]) {
+      case 'f': {
+        if (i + 4 >= len) return -3;
+        const float f = (float) va_arg(ap, double);
+        *((uint32_t *) (buffer+i)) = htonl(*((uint32_t *) &f));
+        i += 4;
+        break;
+      }
+      case 'i': {
+        if (i + 4 >= len) return -3;
+        const uint32_t k = (uint32_t) va_arg(ap, int);
+        *((uint32_t *) (buffer+i)) = htonl(k);
+        i += 4;
+        break;
+      }
+      case 's': {
+        const char *str = (const char *) va_arg(ap, void *);
+        s_len = (int) strlen(str);
+        if (i + s_len >= len) return -3;
+        strcpy(buffer+i, str);
+        i += (s_len + 1);
+        while (i & 0x3) ++i;
+        break;
+      }
+      default: continue;
     }
-    case 'i': {
-      if (i + 4 >= len) return -3;
-      const uint32_t k = (uint32_t) va_arg(ap, int));
-      *((unit32_t *) buffer+i) = htonl(k);
-      i += 4;
-      break;
-    }
-    case 's': {
-      const char *str = (const char *) va_arg(ap, void *))
-      const int s_len = strlen(str);
-      if (i + s_len >= len) return -3;
-      strcpy(buffer+i, str);
-      i += s_len;
-      while (i & 0x3) ++i;
-      break;
-    }
-    default: continue;
   }
 
   va_end(ap);

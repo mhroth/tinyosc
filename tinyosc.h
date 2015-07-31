@@ -43,6 +43,8 @@ float tosc_getNextFloat(tosc_tinyosc *o);
 // returns the next string, or NULL if the buffer length is exceeded.
 const char *tosc_getNextString(tosc_tinyosc *o);
 
+// writes an OSC packet to a buffer. Returns the total number of bytes written.
+// The entire buffer is cleared before writing.
 int tosc_write(char *buffer, const int len, const char *address,
     const char *fmt, ...);
 

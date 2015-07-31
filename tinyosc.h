@@ -24,19 +24,23 @@ extern "C" {
 #endif
 
 typedef struct tosc_tinyosc {
-  const char *address;
-  const char *format;
-  const char *marker;
+  const char *address; // a pointer to the OSC address field
+  const char *format; // a pointer to the format field
+  const char *marker; // the current read head
   const char *buffer; // the original message data
   int len; // length of the buffer data
 } tosc_tinyosc;
 
+
 int tosc_init(tosc_tinyosc *o, const char *buffer, const int len);
 
+// returns the next 32-bit int. Does not check buffer bounds.
 int32_t tosc_getNextInt32(tosc_tinyosc *o);
 
+// returns the next 32-bit float. Does not check buffer bounds.
 float tosc_getNextFloat(tosc_tinyosc *o);
 
+// returns the next string, or NULL if the buffer length is exceeded.
 const char *tosc_getNextString(tosc_tinyosc *o);
 
 #ifdef __cplusplus

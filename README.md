@@ -2,6 +2,18 @@
 
 TinyOSC is a minimal [Open Sound Control](http://opensoundcontrol.org/) (OSC) library written in C. The typical use case is to parse a raw buffer received directly from a socket. Given the limited nature of the library it also tends to be quite fast. It doesn't hold on to much state and it doesn't do much error checking. If you have a good idea of what OSC packets you will receive and need to process them quickly, this library might be for you.
 
+## Supported Features
+Due to its *tiny* nature, TinyOSC does not support all standard OSC features. Currently it supports:
+* packet parsing
+* packet writing
+* ~~bundles~~
+* ~~timetag~~
+* ~~matching~~
+* Types
+  * `f`: float
+  * `i`: int32
+  * `s`: string
+
 ## Code Example
 ### Reading
 ```C

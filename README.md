@@ -40,6 +40,7 @@ char buffer[1024];
 
 // write the OSC packet to the buffer
 // returns the number of bytes written to the buffer, negative on error
+// note that tosc_write will clear the entire buffer before writing to it
 int len = tosc_write(
     buffer, sizeof(buffer),
     "/ping", "fsi", 1.0f, "hello", 2);

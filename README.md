@@ -43,7 +43,9 @@ char buffer[1024];
 // note that tosc_write will clear the entire buffer before writing to it
 int len = tosc_write(
     buffer, sizeof(buffer),
-    "/ping", "fsi", 1.0f, "hello", 2);
+    "/ping", // the address
+    "fsi",   // the format; 'f':32-bit float, 's':ascii string, 'i':32-bit integer
+    1.0f, "hello", 2);
 
 // send the data out of the socket
 send(socket_fd, buffer, len, 0);

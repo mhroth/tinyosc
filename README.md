@@ -10,7 +10,7 @@ Due to its *tiny* nature, TinyOSC does not support all standard OSC features. Cu
 * ~~timetag~~
 * ~~matching~~
 * Types
-  * 'b': binary blob
+  * `b`: binary blob
   * `f`: float
   * `i`: int32
   * `s`: string

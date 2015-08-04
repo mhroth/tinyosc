@@ -69,7 +69,7 @@ const char *tosc_getNextString(tosc_tinyosc *o) {
   return s;
 }
 
-void tosc_getNextBlob(tosc_tinyosc *o, char **buffer, int *len) {
+void tosc_getNextBlob(tosc_tinyosc *o, const char **buffer, int *len) {
   int i = (int) ntohl(*((uint32_t *) o->marker)); // get the blob length
   *len = i; // length of blob
   *buffer = o->marker + 4;

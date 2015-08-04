@@ -45,7 +45,7 @@ const char *tosc_getNextString(tosc_tinyosc *o);
 
 // points the given buffer pointer to the next blob.
 // The len pointer is set to the length of the blob.
-void tosc_getNextBlob(tosc_tinyosc *o, char **buffer, int *len);
+void tosc_getNextBlob(tosc_tinyosc *o, const char **buffer, int *len);
 
 // writes an OSC packet to a buffer. Returns the total number of bytes written.
 // The entire buffer is cleared before writing.

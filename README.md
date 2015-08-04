@@ -63,6 +63,9 @@ int len = tosc_write(
 send(socket_fd, buffer, len, 0);
 ```
 
+## Tests
+Meh. Not really. But it works with [TouchOSC](http://hexler.net/software/touchosc)!
+
 ## License
 TinyOSC is published under the [ISC license](http://opensource.org/licenses/ISC). Please see the `LICENSE` file included in this repository, also reproduced below. In short, you are welcome to use this code for any purpose, including commercial and closed-source use.
 

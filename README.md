@@ -10,6 +10,7 @@ Due to its *tiny* nature, TinyOSC does not support all standard OSC features. Cu
 * ~~timetag~~
 * ~~matching~~
 * Types
+  * 'b': binary blob
   * `f`: float
   * `i`: int32
   * `s`: string
@@ -33,6 +34,15 @@ while ((len = READ_BYTES_FROM_SOCKET(buffer)) > 0) {
         osc.format); // the OSC format string, e.g. "f"
     for (int i = 0; osc.format[i] != '\0'; i++) {
       switch (osc.format[i]) {
+        case 'b': {
+          char *b = NULL; // will point to binary data
+          int n = 0; // takes the length of the blob
+          tosc_getNextBlob(&osc, &b, &n);
+          printf("[%i]", n); // print length of blob
+          for (int i = 0; i < n; i++) printf("%X", b[i]); // print blob bytes
+          printf(" ");
+          break;
+        }
         case 'f': printf("%g ", tosc_getNextFloat(&osc)); break;
         case 'i': printf("%i ", tosc_getNextInt32(&osc)); break;
         // returns NULL if the buffer length is exceeded

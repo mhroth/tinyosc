@@ -69,6 +69,15 @@ const char *tosc_getNextString(tosc_tinyosc *o) {
   return s;
 }
 
+void tosc_getNextBlob(tosc_tinyosc *o, char **buffer, int *len) {
+  int i = (int) ntohl(*((uint32_t *) o->marker)); // get the blob length
+  *len = i; // length of blob
+  *buffer = o->marker + 4;
+  i += 4;
+  while (i & 0x3) ++i;
+  o->marker += i;
+}
+
 int tosc_write(char *buffer, const int len,
     const char *address, const char *format, ...) {
   va_list ap;
@@ -87,6 +96,14 @@ int tosc_write(char *buffer, const int len,
 
   for (int j = 0; format[j] != '\0'; ++j) {
     switch (format[j]) {
+      case 'b': {
+        const uint32_t n = (uint32_t) va_arg(ap, int); // length of blob
+        char *b = (char *) va_arg(ap, void *); // pointer to binary data
+        *((uint32_t *) (buffer+i)) = htonl(n); i += 4;
+        memcpy(buffer+i, b, n); i += n;
+        while (i & 0x3) ++i;
+        break;
+      }
       case 'f': {
         if (i + 4 >= len) return -3;
         const float f = (float) va_arg(ap, double);
@@ -110,7 +127,12 @@ int tosc_write(char *buffer, const int len,
         while (i & 0x3) ++i;
         break;
       }
-      default: continue;
+      case 'T': // true
+      case 'F': // false
+      case 'N': // nil
+      case 'I': // infinitum
+          continue;
+      default: return -4; // unknown type
     }
   }
 

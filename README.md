@@ -35,7 +35,7 @@ while ((len = READ_BYTES_FROM_SOCKET(buffer)) > 0) {
     for (int i = 0; osc.format[i] != '\0'; i++) {
       switch (osc.format[i]) {
         case 'b': {
-          char *b = NULL; // will point to binary data
+          const char *b = NULL; // will point to binary data
           int n = 0; // takes the length of the blob
           tosc_getNextBlob(&osc, &b, &n);
           printf("[%i]", n); // print length of blob

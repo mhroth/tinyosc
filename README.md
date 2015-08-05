@@ -67,6 +67,15 @@ send(socket_fd, buffer, len, 0);
 ### main.c
 A small example program is included in `main.c`. Build it using the included shell script `build.sh`, and run it with `tinyosc`. The program simply opens a UDP socket on port 9000 and prints out received OSC messages. Press Ctrl+C to stop. Try it with any OSC client, such as TouchOSC. This program is also an example for how TinyOSC is expected to be used.
 
+#### Sample Output
+```
+Starting write tests:
+[56 bytes] /address fsibTFNI 1 hello world -1 [8]001080F0011181F1 true false nil inf
+done.
+tinyosc is now listening on port 9000.
+Press Ctrl+C to stop.
+```
+
 
 ## Tests
 Meh. Not really. But it works with [TouchOSC](http://hexler.net/software/touchosc)!

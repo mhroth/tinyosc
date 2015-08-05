@@ -14,6 +14,10 @@ Due to its *tiny* nature, TinyOSC does not support all standard OSC features. Cu
   * `f`: float
   * `i`: int32
   * `s`: string
+  * `T`: true
+  * `F`: false
+  * `I`: infinitum
+  * `N`: nil
 
 ## Code Example
 ### Reading

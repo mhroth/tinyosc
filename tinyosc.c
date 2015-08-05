@@ -36,7 +36,7 @@ int tosc_read(tosc_tinyosc *o, const char *buffer, const int len) {
   while (i < len && buffer[i] != '\0') ++i;
   if (i == len) return -2; // format string not null terminated
 
-  ++i; while (i & 0x3) ++i; // advance to the next multiple of 4
+  i = (i + 4) & ~0x3; // advance to the next multiple of 4 after trailing '\0'
   o->marker = buffer + i;
 
   o->buffer = buffer;
@@ -60,12 +60,11 @@ float tosc_getNextFloat(tosc_tinyosc *o) {
 }
 
 const char *tosc_getNextString(tosc_tinyosc *o) {
-  int i = (int) (o->marker - o->buffer); // offset
+  int i = (int) strlen(o->marker);
+  if (o->marker + i >= o->address + o->len) return NULL;
   const char *s = o->marker;
-  while (i < o->len && s[i] != '\0') ++i;
-  if (i == o->len) return NULL;
-  ++i; while (i & 0x3) ++i; // advance to next multiple of 4
-  o->marker = o->buffer + i;
+  i = (i + 4) & ~0x3; // advance to next multiple of 4 after trailing '\0'
+  o->marker += i;
   return s;
 }
 
@@ -73,8 +72,7 @@ void tosc_getNextBlob(tosc_tinyosc *o, const char **buffer, int *len) {
   int i = (int) ntohl(*((uint32_t *) o->marker)); // get the blob length
   *len = i; // length of blob
   *buffer = o->marker + 4;
-  i += 4;
-  while (i & 0x3) ++i;
+  i = (i + 7) & ~0x3;
   o->marker += i;
 }
 
@@ -83,36 +81,37 @@ int tosc_write(char *buffer, const int len,
   va_list ap;
   va_start(ap, format);
 
-  memset(buffer, 0, len); // clear the buffer, just in case
+  memset(buffer, 0, len); // clear the buffer
   int i = (int) strlen(address);
   if (address == NULL || i >= len) return -1;
   strcpy(buffer, address);
-  ++i; while (i & 0x3) ++i;
+  i = (i + 4) & ~0x3;
   buffer[i++] = ',';
   int s_len = (int) strlen(format);
   if (format == NULL || (i + s_len) >= len) return -2;
   strcpy(buffer+i, format);
-  i += (s_len + 1); while (i & 0x3) ++i;
+  i = (i + 4 + s_len) & ~0x3;
 
   for (int j = 0; format[j] != '\0'; ++j) {
     switch (format[j]) {
       case 'b': {
         const uint32_t n = (uint32_t) va_arg(ap, int); // length of blob
+        if (i + 4 + n > len) return -3;
         char *b = (char *) va_arg(ap, void *); // pointer to binary data
         *((uint32_t *) (buffer+i)) = htonl(n); i += 4;
-        memcpy(buffer+i, b, n); i += n;
-        while (i & 0x3) ++i;
+        memcpy(buffer+i, b, n);
+        i = (i + 3 + n) & ~0x3;
         break;
       }
       case 'f': {
-        if (i + 4 >= len) return -3;
+        if (i + 4 > len) return -3;
         const float f = (float) va_arg(ap, double);
         *((uint32_t *) (buffer+i)) = htonl(*((uint32_t *) &f));
         i += 4;
         break;
       }
       case 'i': {
-        if (i + 4 >= len) return -3;
+        if (i + 4 > len) return -3;
         const uint32_t k = (uint32_t) va_arg(ap, int);
         *((uint32_t *) (buffer+i)) = htonl(k);
         i += 4;
@@ -123,15 +122,14 @@ int tosc_write(char *buffer, const int len,
         s_len = (int) strlen(str);
         if (i + s_len >= len) return -3;
         strcpy(buffer+i, str);
-        i += (s_len + 1);
-        while (i & 0x3) ++i;
+        i = (i + 4 + s_len) & ~0x3;
         break;
       }
       case 'T': // true
       case 'F': // false
       case 'N': // nil
       case 'I': // infinitum
-          continue;
+          break;
       default: return -4; // unknown type
     }
   }

@@ -31,61 +31,18 @@ static void sigintHandler(int x) {
 }
 
 /**
- * prints an OSC buffer to stdout
- */
-static void printOscBuffer(const char *buffer, int len) {
-  // parse the buffer contents (the raw OSC bytes)
-  // a return value of 0 indicates no error
-  tosc_tinyosc osc;
-  const int err = tosc_read(&osc, buffer, len);
-  if (err == 0) {
-    printf("[%i bytes] %s %s ",
-        len, // the number of bytes in the OSC message
-        osc.address, // the OSC address string, e.g. "/button1"
-        osc.format); // the OSC format string, e.g. "f"
-
-    for (int i = 0; osc.format[i] != '\0'; i++) {
-      switch (osc.format[i]) {
-        case 'b': {
-          const char *b = NULL; // will point to binary data
-          int n = 0; // takes the length of the blob
-          tosc_getNextBlob(&osc, &b, &n);
-          printf("[%i]", n); // print length of blob
-          for (int j = 0; j < n; j++) printf("%02X", b[j] & 0xFF); // print blob bytes
-          printf(" ");
-          break;
-        }
-        case 'f': printf("%g ", tosc_getNextFloat(&osc)); break;
-        case 'i': printf("%i ", tosc_getNextInt32(&osc)); break;
-        // returns NULL if the buffer length is exceeded
-        case 's': printf("%s ", tosc_getNextString(&osc)); break;
-        case 'F': printf("false "); break;
-        case 'I': printf("inf "); break;
-        case 'N': printf("nil "); break;
-        case 'T': printf("true "); break;
-        default: printf("Unknown format: '%c' ", osc.format[i]); break;
-      }
-    }
-    printf("\n");
-  } else {
-    printf("Error while reading OSC buffer: %i\n", err);
-  }
-}
-
-/**
  * A basic program to listen to port 9000 and print received OSC packets.
  */
 int main(int argc, char *argv[]) {
 
-  tosc_tinyosc osc;
   char buffer[2048]; // declare a 2Kb buffer to read packet data into
 
   printf("Starting write tests:\n");
   int len = 0;
-  char blob[8] = {0x00, 0x10, 0x80, 0xF0, 0x01, 0x11, 0x81, 0xF1};
+  char blob[8] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF};
   len = tosc_write(buffer, sizeof(buffer), "/address", "fsibTFNI",
       1.0f, "hello world", -1, sizeof(blob), blob);
-  printOscBuffer(buffer, len);
+  tosc_printOscBuffer(buffer, len);
   printf("done.\n");
 
   // register the SIGINT handler (Ctrl+C)
@@ -111,8 +68,8 @@ int main(int argc, char *argv[]) {
       struct sockaddr sa; // can be safely cast to sockaddr_in
       socklen_t sa_len = sizeof(struct sockaddr_in);
       int len = 0;
-      while ((len = recvfrom(fd, buffer, sizeof(buffer), 0, &sa, &sa_len)) > 0) {
-        printOscBuffer(buffer, len);
+      while ((len = (int) recvfrom(fd, buffer, sizeof(buffer), 0, &sa, &sa_len)) > 0) {
+        tosc_printOscBuffer(buffer, len);
       }
     }
   }

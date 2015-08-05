@@ -25,10 +25,10 @@ extern "C" {
 
 typedef struct tosc_tinyosc {
   const char *address; // a pointer to the OSC address field
-  const char *format; // a pointer to the format field
-  const char *marker; // the current read head
-  const char *buffer; // the original message data
-  int len; // length of the buffer data
+  const char *format;  // a pointer to the format field
+  const char *marker;  // the current read head
+  const char *buffer;  // the original message data
+  int len;             // length of the buffer data
 } tosc_tinyosc;
 
 
@@ -51,6 +51,10 @@ void tosc_getNextBlob(tosc_tinyosc *o, const char **buffer, int *len);
 // The entire buffer is cleared before writing.
 int tosc_write(char *buffer, const int len, const char *address,
     const char *fmt, ...);
+
+// a convenience function to (non-destructively) print a buffer containing
+// an OSC message to stdout.
+void tosc_printOscBuffer(const char *buffer, const int len);
 
 #ifdef __cplusplus
 }

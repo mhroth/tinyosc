@@ -18,6 +18,7 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdio.h>
 #include "tinyosc.h"
 
 // http://opensoundcontrol.org/spec-1_0
@@ -136,4 +137,42 @@ int tosc_write(char *buffer, const int len,
 
   va_end(ap);
   return i; // return the total number of bytes written
+}
+
+void tosc_printOscBuffer(const char *buffer, const int len) {
+  // parse the buffer contents (the raw OSC bytes)
+  // a return value of 0 indicates no error
+  tosc_tinyosc osc;
+  const int err = tosc_read(&osc, buffer, len);
+  if (err == 0) {
+    printf("[%i bytes] %s %s ",
+        len, // the number of bytes in the OSC message
+        osc.address, // the OSC address string, e.g. "/button1"
+        osc.format); // the OSC format string, e.g. "f"
+
+    for (int i = 0; osc.format[i] != '\0'; i++) {
+      switch (osc.format[i]) {
+        case 'b': {
+          const char *b = NULL; // will point to binary data
+          int n = 0; // takes the length of the blob
+          tosc_getNextBlob(&osc, &b, &n);
+          printf("[%i]", n); // print length of blob
+          for (int j = 0; j < n; j++) printf("%02X", b[j] & 0xFF); // print blob bytes
+          printf(" ");
+          break;
+        }
+        case 'f': printf("%g ", tosc_getNextFloat(&osc)); break;
+        case 'i': printf("%i ", tosc_getNextInt32(&osc)); break;
+        case 's': printf("%s ", tosc_getNextString(&osc)); break;
+        case 'F': printf("false "); break;
+        case 'I': printf("inf "); break;
+        case 'N': printf("nil "); break;
+        case 'T': printf("true "); break;
+        default: printf("Unknown format: '%c' ", osc.format[i]); break;
+      }
+    }
+    printf("\n");
+  } else {
+    printf("Error while reading OSC buffer: %i\n", err);
+  }
 }

@@ -32,6 +32,10 @@ typedef struct tosc_tinyosc {
 } tosc_tinyosc;
 
 
+// parse a buffer containing an OSC message.
+// The contents of the buffer are NOT copied.
+// The tosc_tinyosc struct only points at relevant parts of the original buffer. 
+// Returns 0 if there is no error. An error code (a negative number) otherwise.
 int tosc_read(tosc_tinyosc *o, const char *buffer, const int len);
 
 // returns the next 32-bit int. Does not check buffer bounds.

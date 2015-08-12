@@ -145,7 +145,7 @@ void tosc_printOscBuffer(const char *buffer, const int len) {
   tosc_tinyosc osc;
   const int err = tosc_read(&osc, buffer, len);
   if (err == 0) {
-    printf("[%i bytes] %s %s ",
+    printf("[%i bytes] %s %s",
         len, // the number of bytes in the OSC message
         osc.address, // the OSC address string, e.g. "/button1"
         osc.format); // the OSC format string, e.g. "f"
@@ -161,14 +161,14 @@ void tosc_printOscBuffer(const char *buffer, const int len) {
           printf(" ");
           break;
         }
-        case 'f': printf("%g ", tosc_getNextFloat(&osc)); break;
-        case 'i': printf("%i ", tosc_getNextInt32(&osc)); break;
-        case 's': printf("%s ", tosc_getNextString(&osc)); break;
-        case 'F': printf("false "); break;
-        case 'I': printf("inf "); break;
-        case 'N': printf("nil "); break;
-        case 'T': printf("true "); break;
-        default: printf("Unknown format: '%c' ", osc.format[i]); break;
+        case 'f': printf(" %g", tosc_getNextFloat(&osc)); break;
+        case 'i': printf(" %i", tosc_getNextInt32(&osc)); break;
+        case 's': printf(" %s", tosc_getNextString(&osc)); break;
+        case 'F': printf(" false"); break;
+        case 'I': printf(" inf"); break;
+        case 'N': printf(" nil"); break;
+        case 'T': printf(" true"); break;
+        default: printf(" Unknown format: '%c'", osc.format[i]); break;
       }
     }
     printf("\n");

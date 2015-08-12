@@ -34,7 +34,7 @@ typedef struct tosc_tinyosc {
 
 // parse a buffer containing an OSC message.
 // The contents of the buffer are NOT copied.
-// The tosc_tinyosc struct only points at relevant parts of the original buffer. 
+// The tosc_tinyosc struct only points at relevant parts of the original buffer.
 // Returns 0 if there is no error. An error code (a negative number) otherwise.
 int tosc_read(tosc_tinyosc *o, const char *buffer, const int len);
 
@@ -49,6 +49,7 @@ const char *tosc_getNextString(tosc_tinyosc *o);
 
 // points the given buffer pointer to the next blob.
 // The len pointer is set to the length of the blob.
+// Returns NULL and 0 is the OSC buffer bounds are exceeded.
 void tosc_getNextBlob(tosc_tinyosc *o, const char **buffer, int *len);
 
 // writes an OSC packet to a buffer. Returns the total number of bytes written.

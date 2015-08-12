@@ -71,10 +71,15 @@ const char *tosc_getNextString(tosc_tinyosc *o) {
 
 void tosc_getNextBlob(tosc_tinyosc *o, const char **buffer, int *len) {
   int i = (int) ntohl(*((uint32_t *) o->marker)); // get the blob length
-  *len = i; // length of blob
-  *buffer = o->marker + 4;
-  i = (i + 7) & ~0x3;
-  o->marker += i;
+  if (o->marker + 4 + i <= o->buffer + o->len) {
+    *len = i; // length of blob
+    *buffer = o->marker + 4;
+    i = (i + 7) & ~0x3;
+    o->marker += i;
+  } else {
+    *len = 0;
+    *buffer = NULL;
+  }
 }
 
 int tosc_write(char *buffer, const int len,

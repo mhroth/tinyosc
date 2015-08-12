@@ -156,9 +156,8 @@ void tosc_printOscBuffer(const char *buffer, const int len) {
           const char *b = NULL; // will point to binary data
           int n = 0; // takes the length of the blob
           tosc_getNextBlob(&osc, &b, &n);
-          printf("[%i]", n); // print length of blob
+          printf(" [%i]", n); // print length of blob
           for (int j = 0; j < n; j++) printf("%02X", b[j] & 0xFF); // print blob bytes
-          printf(" ");
           break;
         }
         case 'f': printf(" %g", tosc_getNextFloat(&osc)); break;

@@ -13,7 +13,9 @@ Due to its *tiny* nature, TinyOSC does not support all standard OSC features. Cu
 * Types
   * `b`: binary blob
   * `f`: float
+  * `d`: double
   * `i`: int32
+  * `h`: int64
   * `s`: string
   * `T`: true
   * `F`: false
@@ -25,14 +27,14 @@ Due to its *tiny* nature, TinyOSC does not support all standard OSC features. Cu
 ```C
 #include "tinyosc.h"
 
-tosc_tinyosc osc; // declare the TinyOSC structure
+tosc_message osc; // declare the TinyOSC structure
 char buffer[1024]; // declare a buffer into which to read the socket contents
 int len = 0; // the number of bytes read from the socket
 
 while ((len = READ_BYTES_FROM_SOCKET(buffer)) > 0) {
   // parse the buffer contents (the raw OSC bytes)
   // a return value of 0 indicates no error
-  if (!tosc_read(&osc, buffer, len)) {
+  if (!tosc_readMessage(&osc, buffer, len)) {
     printf("Received OSC message: [%i bytes] %s %s ",
         len, // the number of bytes in the OSC message
         tosc_getAddress(&osc), // the OSC address string, e.g. "/button1"
@@ -59,7 +61,7 @@ char buffer[1024];
 // write the OSC packet to the buffer
 // returns the number of bytes written to the buffer, negative on error
 // note that tosc_write will clear the entire buffer before writing to it
-int len = tosc_write(
+int len = tosc_writeMessage(
     buffer, sizeof(buffer),
     "/ping", // the address
     "fsi",   // the format; 'f':32-bit float, 's':ascii string, 'i':32-bit integer
@@ -70,20 +72,22 @@ send(socket_fd, buffer, len, 0);
 ```
 
 ### Reading Bundles
+Here is an example of the kind of message processing loop that you might have around a socket. The buffer should first be inspected to see if it contains a bundle or not, at which point messages are parsed independently along with an optional timetag.
+
 ```C
-void receive(const char *buffer, const int len) {
+void receive(char *buffer, int len) {
   // see if the buffer contains a bundle or an individual message
   if (tosc_isBundle(buffer)) {
     tosc_bundle bundle;
     tosc_readBundle(&bundle, buffer, len);
     const uint64_t timetag = tosc_getTimetag(&bundle);
-    tosc_tinyosc osc;
+    tosc_message osc;
     while (tosc_getNextMessage(&bundle, &osc)) {
       handleMessage(&osc, timetag);
     }
   } else {
-    tosc_tinyosc osc;
-    tosc_readOsc(&osc, buffer, len);
+    tosc_message osc;
+    tosc_readMessage(&osc, buffer, len);
     handleMessage(&osc, 0L);
   }
 }

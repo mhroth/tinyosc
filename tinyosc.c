@@ -22,7 +22,7 @@
 #include "tinyosc.h"
 
 // http://opensoundcontrol.org/spec-1_0
-int tosc_read(tosc_tinyosc *o, char *buffer, const int len) {
+int tosc_readMessage(tosc_message *o, char *buffer, const int len) {
   // NOTE(mhroth): if there's a comma in the address, that's weird
   int i = 0;
   while (i < len && buffer[i] != ',') ++i; // find the format comma
@@ -58,37 +58,49 @@ uint64_t tosc_getTimetag(tosc_bundle *b) {
   return ntohll(*((uint64_t *) (b->buffer+8)));
 }
 
-bool tosc_getNextMessage(tosc_bundle *b, tosc_tinyosc *o) {
+bool tosc_getNextMessage(tosc_bundle *b, tosc_message *o) {
   if ((b->marker - b->buffer) >= b->len) return false;
   uint32_t len = (uint32_t) ntohl(*((int32_t *) b->marker));
-  tosc_read(o, b->marker+4, len);
+  tosc_readMessage(o, b->marker+4, len);
   b->marker += (4 + len); // move marker to next bundle element
   return true;
 }
 
-char *tosc_getAddress(tosc_tinyosc *o) {
+char *tosc_getAddress(tosc_message *o) {
   return o->buffer;
 }
 
-char *tosc_getFormat(tosc_tinyosc *o) {
+char *tosc_getFormat(tosc_message *o) {
   return o->format;
 }
 
-int32_t tosc_getNextInt32(tosc_tinyosc *o) {
+int32_t tosc_getNextInt32(tosc_message *o) {
   // convert from big-endian (network btye order)
   const int32_t i = (int32_t) ntohl(*((uint32_t *) o->marker));
   o->marker += 4;
   return i;
 }
 
-float tosc_getNextFloat(tosc_tinyosc *o) {
+int64_t tosc_getNextInt64(tosc_message *o) {
+  const int64_t i = (int64_t) ntohll(*((uint64_t *) o->marker));
+  o->marker += 8;
+  return i;
+}
+
+float tosc_getNextFloat(tosc_message *o) {
   // convert from big-endian (network btye order)
   const uint32_t i = ntohl(*((uint32_t *) o->marker));
   o->marker += 4;
   return *((float *) (&i));
 }
 
-const char *tosc_getNextString(tosc_tinyosc *o) {
+double tosc_getNextDouble(tosc_message *o) {
+  const uint64_t i = ntohll(*((uint64_t *) o->marker));
+  o->marker += 8;
+  return *((double *) (&i));
+}
+
+const char *tosc_getNextString(tosc_message *o) {
   int i = (int) strlen(o->marker);
   if (o->marker + i >= o->buffer + o->len) return NULL;
   const char *s = o->marker;
@@ -97,7 +109,7 @@ const char *tosc_getNextString(tosc_tinyosc *o) {
   return s;
 }
 
-void tosc_getNextBlob(tosc_tinyosc *o, const char **buffer, int *len) {
+void tosc_getNextBlob(tosc_message *o, const char **buffer, int *len) {
   int i = (int) ntohl(*((uint32_t *) o->marker)); // get the blob length
   if (o->marker + 4 + i <= o->buffer + o->len) {
     *len = i; // length of blob
@@ -150,11 +162,25 @@ static int tosc_vwrite(char *buffer, const int len,
         i += 4;
         break;
       }
+      case 'd': {
+        if (i + 8 > len) return -3;
+        const double f = (double) va_arg(ap, double);
+        *((uint64_t *) (buffer+i)) = htonll(*((uint64_t *) &f));
+        i += 8;
+        break;
+      }
       case 'i': {
         if (i + 4 > len) return -3;
         const uint32_t k = (uint32_t) va_arg(ap, int);
         *((uint32_t *) (buffer+i)) = htonl(k);
         i += 4;
+        break;
+      }
+      case 'h': {
+        if (i + 8 > len) return -3;
+        const uint64_t k = (uint64_t) va_arg(ap, long long);
+        *((uint64_t *) (buffer+i)) = htonll(k);
+        i += 8;
         break;
       }
       case 's': {
@@ -190,7 +216,7 @@ int tosc_writeNextMessage(tosc_bundle *b,
   return i;
 }
 
-int tosc_write(char *buffer, const int len,
+int tosc_writeMessage(char *buffer, const int len,
     const char *address, const char *format, ...) {
   va_list ap;
   va_start(ap, format);
@@ -202,8 +228,8 @@ int tosc_write(char *buffer, const int len,
 void tosc_printOscBuffer(char *buffer, const int len) {
   // parse the buffer contents (the raw OSC bytes)
   // a return value of 0 indicates no error
-  tosc_tinyosc osc;
-  const int err = tosc_read(&osc, buffer, len);
+  tosc_message osc;
+  const int err = tosc_readMessage(&osc, buffer, len);
   if (err == 0) {
     printf("[%i bytes] %s %s",
         len, // the number of bytes in the OSC message
@@ -221,7 +247,9 @@ void tosc_printOscBuffer(char *buffer, const int len) {
           break;
         }
         case 'f': printf(" %g", tosc_getNextFloat(&osc)); break;
-        case 'i': printf(" %i", tosc_getNextInt32(&osc)); break;
+        case 'd': printf(" %g", tosc_getNextDouble(&osc)); break;
+        case 'i': printf(" %d", tosc_getNextInt32(&osc)); break;
+        case 'h': printf(" %lld", tosc_getNextInt64(&osc)); break;
         case 's': printf(" %s", tosc_getNextString(&osc)); break;
         case 'F': printf(" false"); break;
         case 'I': printf(" inf"); break;

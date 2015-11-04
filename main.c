@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
   printf("Starting write tests:\n");
   int len = 0;
   char blob[8] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF};
-  len = tosc_write(buffer, sizeof(buffer), "/address", "fsibTFNI",
+  len = tosc_writeMessage(buffer, sizeof(buffer), "/address", "fsibTFNI",
       1.0f, "hello world", -1, sizeof(blob), blob);
   tosc_printOscBuffer(buffer, len);
   printf("done.\n");

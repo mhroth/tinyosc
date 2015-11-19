@@ -18,6 +18,7 @@
 #define _TINY_OSC_
 
 #include <stdint.h>
+#include <sys/select.h>
 
 #ifdef __cplusplus
 extern "C" {

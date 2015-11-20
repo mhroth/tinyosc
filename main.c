@@ -15,6 +15,7 @@
  */
 
 #include <arpa/inet.h>
+#include <sys/select.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdbool.h>

@@ -34,7 +34,8 @@ typedef struct tosc_message {
 typedef struct tosc_bundle {
   char *marker; // the current write head (where the next message will be written)
   char *buffer; // the original buffer
-  uint32_t len; // the length of the original buffer
+  uint32_t bufLen; // the byte length of the original buffer
+  uint32_t bundleLen; // the byte length of the total bundle
 } tosc_bundle;
 
 
@@ -122,16 +123,21 @@ int tosc_parseMessage(tosc_message *o, char *buffer, const int len);
 void tosc_writeBundle(tosc_bundle *b, uint64_t timetag, char *buffer, const int len);
 
 /**
- * Write a message to a bundle buffer.
+ * Write a message to a bundle buffer. Returns the number of bytes written.
  */
-int tosc_writeNextMessage(tosc_bundle *b,
+uint32_t tosc_writeNextMessage(tosc_bundle *b,
     const char *address, const char *format, ...);
+
+/**
+ * Returns the length in bytes of the bundle.
+ */
+uint32_t tosc_getBundleLength(tosc_bundle *b);
 
 /**
  * Writes an OSC packet to a buffer. Returns the total number of bytes written.
  * The entire buffer is cleared before writing.
  */
-int tosc_writeMessage(char *buffer, const int len, const char *address,
+uint32_t tosc_writeMessage(char *buffer, const int len, const char *address,
     const char *fmt, ...);
 
 /**

@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include "tinyosc.h"
 
+#define BUNDLE_ID 0x2362756E646C6500L // "#bundle"
+
 // http://opensoundcontrol.org/spec-1_0
 int tosc_parseMessage(tosc_message *o, char *buffer, const int len) {
   // NOTE(mhroth): if there's a comma in the address, that's weird
@@ -45,21 +47,26 @@ int tosc_parseMessage(tosc_message *o, char *buffer, const int len) {
 
 // check if first eight bytes are '#bundle '
 bool tosc_isBundle(const char *buffer) {
-  return ((*(const int64_t *) buffer) == htonll(0x2362756E646C6500L));
+  return ((*(const int64_t *) buffer) == htonll(BUNDLE_ID));
 }
 
 void tosc_parseBundle(tosc_bundle *b, char *buffer, const int len) {
   b->buffer = (char *) buffer;
   b->marker = buffer + 16; // move past '#bundle ' and timetag fields
-  b->len = len;
+  b->bufLen = len;
+  b->bundleLen = len;
 }
 
 uint64_t tosc_getTimetag(tosc_bundle *b) {
   return ntohll(*((uint64_t *) (b->buffer+8)));
 }
 
+uint32_t tosc_getBundleLength(tosc_bundle *b) {
+  return b->bundleLen;
+}
+
 bool tosc_getNextMessage(tosc_bundle *b, tosc_message *o) {
-  if ((b->marker - b->buffer) >= b->len) return false;
+  if ((b->marker - b->buffer) >= b->bundleLen) return false;
   uint32_t len = (uint32_t) ntohl(*((int32_t *) b->marker));
   tosc_parseMessage(o, b->marker+4, len);
   b->marker += (4 + len); // move marker to next bundle element
@@ -127,18 +134,20 @@ void tosc_getNextBlob(tosc_message *o, const char **buffer, int *len) {
 }
 
 void tosc_writeBundle(tosc_bundle *b, uint64_t timetag, char *buffer, const int len) {
-  *((uint64_t *) buffer) = htonll(0x2362756E646C6500L); // '#bundle'
+  *((uint64_t *) buffer) = htonll(BUNDLE_ID);
   *((uint64_t *) (buffer + 8)) = htonll(timetag);
 
   b->buffer = buffer;
   b->marker = buffer + 16;
-  b->len = len;
+  b->bufLen = len;
+  b->bundleLen = 16;
 }
 
-static int tosc_vwrite(char *buffer, const int len,
+// always writes a multiple of 4 bytes
+static uint32_t tosc_vwrite(char *buffer, const int len,
     const char *address, const char *format, va_list ap) {
   memset(buffer, 0, len); // clear the buffer
-  int i = (int) strlen(address);
+  uint32_t i = (uint32_t) strlen(address);
   if (address == NULL || i >= len) return -1;
   strcpy(buffer, address);
   i = (i + 4) & ~0x3;
@@ -207,24 +216,25 @@ static int tosc_vwrite(char *buffer, const int len,
   return i; // return the total number of bytes written
 }
 
-int tosc_writeNextMessage(tosc_bundle *b,
+uint32_t tosc_writeNextMessage(tosc_bundle *b,
     const char *address, const char *format, ...) {
   va_list ap;
   va_start(ap, format);
-  if (b->len <= 0) return 0;
-  const int i = tosc_vwrite(b->marker+4, b->len-4, address, format, ap);
+  if (b->bundleLen >= b->bufLen) return 0;
+  const uint32_t i = tosc_vwrite(
+      b->marker+4, b->bufLen-b->bundleLen-4, address, format, ap);
   va_end(ap);
-  *((int32_t *) b->marker) = i;
+  *((int32_t *) b->marker) = i; // write the length of the message
   b->marker += (4 + i);
-  b->len -= (4 + i);
+  b->bundleLen += (4 + i);
   return i;
 }
 
-int tosc_writeMessage(char *buffer, const int len,
+uint32_t tosc_writeMessage(char *buffer, const int len,
     const char *address, const char *format, ...) {
   va_list ap;
   va_start(ap, format);
-  const int i = tosc_vwrite(buffer, len, address, format, ap);
+  const uint32_t i = tosc_vwrite(buffer, len, address, format, ap);
   va_end(ap);
   return i; // return the total number of bytes written
 }

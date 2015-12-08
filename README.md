@@ -79,7 +79,7 @@ void receive(char *buffer, int len) {
   // see if the buffer contains a bundle or an individual message
   if (tosc_isBundle(buffer)) {
     tosc_bundle bundle;
-    tosc_readBundle(&bundle, buffer, len);
+    tosc_parseBundle(&bundle, buffer, len);
     const uint64_t timetag = tosc_getTimetag(&bundle);
     tosc_message osc;
     while (tosc_getNextMessage(&bundle, &osc)) {
@@ -87,7 +87,7 @@ void receive(char *buffer, int len) {
     }
   } else {
     tosc_message osc;
-    tosc_readMessage(&osc, buffer, len);
+    tosc_parseMessage(&osc, buffer, len);
     handleMessage(&osc, 0L);
   }
 }

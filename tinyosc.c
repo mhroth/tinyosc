@@ -22,7 +22,7 @@
 #include "tinyosc.h"
 
 // http://opensoundcontrol.org/spec-1_0
-int tosc_readMessage(tosc_message *o, char *buffer, const int len) {
+int tosc_parseMessage(tosc_message *o, char *buffer, const int len) {
   // NOTE(mhroth): if there's a comma in the address, that's weird
   int i = 0;
   while (i < len && buffer[i] != ',') ++i; // find the format comma
@@ -48,7 +48,7 @@ bool tosc_isBundle(const char *buffer) {
   return ((*(const int64_t *) buffer) == htonll(0x2362756E646C6500L));
 }
 
-void tosc_readBundle(tosc_bundle *b, char *buffer, const int len) {
+void tosc_parseBundle(tosc_bundle *b, char *buffer, const int len) {
   b->buffer = (char *) buffer;
   b->marker = buffer + 16; // move past '#bundle ' and timetag fields
   b->len = len;
@@ -61,7 +61,7 @@ uint64_t tosc_getTimetag(tosc_bundle *b) {
 bool tosc_getNextMessage(tosc_bundle *b, tosc_message *o) {
   if ((b->marker - b->buffer) >= b->len) return false;
   uint32_t len = (uint32_t) ntohl(*((int32_t *) b->marker));
-  tosc_readMessage(o, b->marker+4, len);
+  tosc_parseMessage(o, b->marker+4, len);
   b->marker += (4 + len); // move marker to next bundle element
   return true;
 }
@@ -72,6 +72,10 @@ char *tosc_getAddress(tosc_message *o) {
 
 char *tosc_getFormat(tosc_message *o) {
   return o->format;
+}
+
+uint32_t tosc_getLength(tosc_message *o) {
+  return o->len;
 }
 
 int32_t tosc_getNextInt32(tosc_message *o) {
@@ -122,9 +126,9 @@ void tosc_getNextBlob(tosc_message *o, const char **buffer, int *len) {
   }
 }
 
-void tosc_writeBundle(tosc_bundle *b, uint32_t timetag, char *buffer, const int len) {
+void tosc_writeBundle(tosc_bundle *b, uint64_t timetag, char *buffer, const int len) {
   *((uint64_t *) buffer) = htonll(0x2362756E646C6500L); // '#bundle'
-  *((uint32_t *) (buffer + 8)) = (uint32_t) htonll(timetag);
+  *((uint64_t *) (buffer + 8)) = htonll(timetag);
 
   b->buffer = buffer;
   b->marker = buffer + 16;
@@ -228,38 +232,39 @@ int tosc_writeMessage(char *buffer, const int len,
 void tosc_printOscBuffer(char *buffer, const int len) {
   // parse the buffer contents (the raw OSC bytes)
   // a return value of 0 indicates no error
-  tosc_message osc;
-  const int err = tosc_readMessage(&osc, buffer, len);
-  if (err == 0) {
-    printf("[%i bytes] %s %s",
-        len, // the number of bytes in the OSC message
-        tosc_getAddress(&osc), // the OSC address string, e.g. "/button1"
-        tosc_getFormat(&osc)); // the OSC format string, e.g. "f"
+  tosc_message m;
+  const int err = tosc_parseMessage(&m, buffer, len);
+  if (err == 0) tosc_printMessage(&m);
+  else printf("Error while reading OSC buffer: %i\n", err);
+}
 
-    for (int i = 0; osc.format[i] != '\0'; i++) {
-      switch (osc.format[i]) {
-        case 'b': {
-          const char *b = NULL; // will point to binary data
-          int n = 0; // takes the length of the blob
-          tosc_getNextBlob(&osc, &b, &n);
-          printf(" [%i]", n); // print length of blob
-          for (int j = 0; j < n; ++j) printf("%02X", b[j] & 0xFF); // print blob bytes
-          break;
-        }
-        case 'f': printf(" %g", tosc_getNextFloat(&osc)); break;
-        case 'd': printf(" %g", tosc_getNextDouble(&osc)); break;
-        case 'i': printf(" %d", tosc_getNextInt32(&osc)); break;
-        case 'h': printf(" %lld", tosc_getNextInt64(&osc)); break;
-        case 's': printf(" %s", tosc_getNextString(&osc)); break;
-        case 'F': printf(" false"); break;
-        case 'I': printf(" inf"); break;
-        case 'N': printf(" nil"); break;
-        case 'T': printf(" true"); break;
-        default: printf(" Unknown format: '%c'", osc.format[i]); break;
+void tosc_printMessage(tosc_message *osc) {
+  printf("[%i bytes] %s %s",
+      osc->len, // the number of bytes in the OSC message
+      tosc_getAddress(osc), // the OSC address string, e.g. "/button1"
+      tosc_getFormat(osc)); // the OSC format string, e.g. "f"
+
+  for (int i = 0; osc->format[i] != '\0'; i++) {
+    switch (osc->format[i]) {
+      case 'b': {
+        const char *b = NULL; // will point to binary data
+        int n = 0; // takes the length of the blob
+        tosc_getNextBlob(osc, &b, &n);
+        printf(" [%i]", n); // print length of blob
+        for (int j = 0; j < n; ++j) printf("%02X", b[j] & 0xFF); // print blob bytes
+        break;
       }
+      case 'f': printf(" %g", tosc_getNextFloat(osc)); break;
+      case 'd': printf(" %g", tosc_getNextDouble(osc)); break;
+      case 'i': printf(" %d", tosc_getNextInt32(osc)); break;
+      case 'h': printf(" %lld", tosc_getNextInt64(osc)); break;
+      case 's': printf(" %s", tosc_getNextString(osc)); break;
+      case 'F': printf(" false"); break;
+      case 'I': printf(" inf"); break;
+      case 'N': printf(" nil"); break;
+      case 'T': printf(" true"); break;
+      default: printf(" Unknown format: '%c'", osc->format[i]); break;
     }
-    printf("\n");
-  } else {
-    printf("Error while reading OSC buffer: %i\n", err);
   }
+  printf("\n");
 }

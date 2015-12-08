@@ -4,15 +4,18 @@ TinyOSC is a minimal [Open Sound Control](http://opensoundcontrol.org/) (OSC) li
 
 ## Supported Features
 Due to its *tiny* nature, TinyOSC does not support all standard OSC features. Currently it supports:
-* packet parsing
-* packet writing
-* ~~bundles~~
-* ~~timetag~~
+* message parsing
+* message writing
+* bundle parsing
+* bundle writing
+* timetag
 * ~~matching~~
 * Types
   * `b`: binary blob
   * `f`: float
+  * `d`: double
   * `i`: int32
+  * `h`: int64
   * `s`: string
   * `T`: true
   * `F`: false
@@ -20,22 +23,22 @@ Due to its *tiny* nature, TinyOSC does not support all standard OSC features. Cu
   * `N`: nil
 
 ## Code Example
-### Reading
+### Reading Messages
 ```C
 #include "tinyosc.h"
 
-tosc_tinyosc osc; // declare the TinyOSC structure
+tosc_message osc; // declare the TinyOSC structure
 char buffer[1024]; // declare a buffer into which to read the socket contents
 int len = 0; // the number of bytes read from the socket
 
 while ((len = READ_BYTES_FROM_SOCKET(buffer)) > 0) {
   // parse the buffer contents (the raw OSC bytes)
   // a return value of 0 indicates no error
-  if (!tosc_read(&osc, buffer, len)) {
+  if (!tosc_readMessage(&osc, buffer, len)) {
     printf("Received OSC message: [%i bytes] %s %s ",
         len, // the number of bytes in the OSC message
-        osc.address, // the OSC address string, e.g. "/button1"
-        osc.format); // the OSC format string, e.g. "f"
+        tosc_getAddress(&osc), // the OSC address string, e.g. "/button1"
+        tosc_getFormat(&osc)); // the OSC format string, e.g. "f"
     for (int i = 0; osc.format[i] != '\0'; i++) {
       switch (osc.format[i]) {
         case 'f': printf("%g ", tosc_getNextFloat(&osc)); break;
@@ -50,7 +53,7 @@ while ((len = READ_BYTES_FROM_SOCKET(buffer)) > 0) {
 }
 ```
 
-### Writing
+### Writing Messages
 ```C
 // declare a buffer for writing the OSC packet into
 char buffer[1024];
@@ -58,7 +61,7 @@ char buffer[1024];
 // write the OSC packet to the buffer
 // returns the number of bytes written to the buffer, negative on error
 // note that tosc_write will clear the entire buffer before writing to it
-int len = tosc_write(
+int len = tosc_writeMessage(
     buffer, sizeof(buffer),
     "/ping", // the address
     "fsi",   // the format; 'f':32-bit float, 's':ascii string, 'i':32-bit integer
@@ -66,6 +69,41 @@ int len = tosc_write(
 
 // send the data out of the socket
 send(socket_fd, buffer, len, 0);
+```
+
+### Reading Bundles
+Here is an example of the kind of message processing loop that you might have around a socket. The buffer should first be inspected to see if it contains a bundle or not, at which point messages are parsed independently along with an optional timetag.
+
+```C
+void receive(char *buffer, int len) {
+  // see if the buffer contains a bundle or an individual message
+  if (tosc_isBundle(buffer)) {
+    tosc_bundle bundle;
+    tosc_parseBundle(&bundle, buffer, len);
+    const uint64_t timetag = tosc_getTimetag(&bundle);
+    tosc_message osc;
+    while (tosc_getNextMessage(&bundle, &osc)) {
+      handleMessage(&osc, timetag);
+    }
+  } else {
+    tosc_message osc;
+    tosc_parseMessage(&osc, buffer, len);
+    handleMessage(&osc, 0L);
+  }
+}
+```
+
+### Writing Bundles
+```C
+char buffer[1024];
+
+tosc_bundle bundle;
+tosc_writeBundle(&bundle, buffer, sizeof(buffer));
+tosc_writeNextMessage(&bundle, "/ping", "fsi", 1.0f, "hello", 3);
+tosc_writeNextMessage(&bundle, "/pong", "TTF");
+// etc.
+
+send(buffer, tosc_getBundleLength(&bundle));
 ```
 
 ### main.c

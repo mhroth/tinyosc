@@ -17,49 +17,134 @@
 #ifndef _TINY_OSC_
 #define _TINY_OSC_
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct tosc_tinyosc {
-  const char *address; // a pointer to the OSC address field
-  const char *format;  // a pointer to the format field
-  const char *marker;  // the current read head
-  const char *buffer;  // the original message data
-  int len;             // length of the buffer data
-} tosc_tinyosc;
+typedef struct tosc_message {
+  char *format;  // a pointer to the format field
+  char *marker;  // the current read head
+  char *buffer;  // the original message data (also points to the address)
+  uint32_t len;  // length of the buffer data
+} tosc_message;
+
+typedef struct tosc_bundle {
+  char *marker; // the current write head (where the next message will be written)
+  char *buffer; // the original buffer
+  uint32_t len; // the length of the original buffer
+} tosc_bundle;
 
 
-// parse a buffer containing an OSC message.
-// The contents of the buffer are NOT copied.
-// The tosc_tinyosc struct only points at relevant parts of the original buffer.
-// Returns 0 if there is no error. An error code (a negative number) otherwise.
-int tosc_read(tosc_tinyosc *o, const char *buffer, const int len);
 
-// returns the next 32-bit int. Does not check buffer bounds.
-int32_t tosc_getNextInt32(tosc_tinyosc *o);
+/**
+ * Returns true if the buffer refers to a bundle of OSC messages. False otherwise.
+ */
+bool tosc_isBundle(const char *buffer);
 
-// returns the next 32-bit float. Does not check buffer bounds.
-float tosc_getNextFloat(tosc_tinyosc *o);
+/**
+ * Reads a buffer containing a bundle of OSC messages.
+ */
+void tosc_parseBundle(tosc_bundle *b, char *buffer, const int len);
 
-// returns the next string, or NULL if the buffer length is exceeded.
-const char *tosc_getNextString(tosc_tinyosc *o);
+/**
+ * Returns the timetag of an OSC bundle.
+ */
+uint64_t tosc_getTimetag(tosc_bundle *b);
 
-// points the given buffer pointer to the next blob.
-// The len pointer is set to the length of the blob.
-// Returns NULL and 0 is the OSC buffer bounds are exceeded.
-void tosc_getNextBlob(tosc_tinyosc *o, const char **buffer, int *len);
+/**
+ * Parses the next message in a bundle. Returns true if successful.
+ * False otherwise.
+ */
+bool tosc_getNextMessage(tosc_bundle *b, tosc_message *o);
 
-// writes an OSC packet to a buffer. Returns the total number of bytes written.
-// The entire buffer is cleared before writing.
-int tosc_write(char *buffer, const int len, const char *address,
+/**
+ * Returns a point to the address block of the OSC buffer.
+ * This is also the start of the buffer.
+ */
+char *tosc_getAddress(tosc_message *o);
+
+/**
+ * Returns a pointer to the format block of the OSC buffer.
+ */
+char *tosc_getFormat(tosc_message *o);
+
+/**
+ * Returns the length in bytes of this message.
+ */
+uint32_t tosc_getLength(tosc_message *o);
+
+/**
+ * Returns the next 32-bit int. Does not check buffer bounds.
+ */
+int32_t tosc_getNextInt32(tosc_message *o);
+
+/**
+ * Returns the next 64-bit int. Does not check buffer bounds.
+ */
+int64_t tosc_getNextInt64(tosc_message *o);
+
+/**
+ * Returns the next 32-bit float. Does not check buffer bounds.
+ */
+float tosc_getNextFloat(tosc_message *o);
+
+/**
+ * Returns the next 64-bit float. Does not check buffer bounds.
+ */
+double tosc_getNextDouble(tosc_message *o);
+
+/**
+ * Returns the next string, or NULL if the buffer length is exceeded.
+ */
+const char *tosc_getNextString(tosc_message *o);
+
+/**
+ * Points the given buffer pointer to the next blob.
+ * The len pointer is set to the length of the blob.
+ * Returns NULL and 0 if the OSC buffer bounds are exceeded.
+ */
+void tosc_getNextBlob(tosc_message *o, const char **buffer, int *len);
+
+/**
+ * Parse a buffer containing an OSC message.
+ * The contents of the buffer are NOT copied.
+ * The tosc_message struct only points at relevant parts of the original buffer.
+ * Returns 0 if there is no error. An error code (a negative number) otherwise.
+ */
+int tosc_parseMessage(tosc_message *o, char *buffer, const int len);
+
+/**
+ * Starts writing a bundle to the given buffer with length.
+ */
+void tosc_writeBundle(tosc_bundle *b, uint64_t timetag, char *buffer, const int len);
+
+/**
+ * Write a message to a bundle buffer.
+ */
+int tosc_writeNextMessage(tosc_bundle *b,
+    const char *address, const char *format, ...);
+
+/**
+ * Writes an OSC packet to a buffer. Returns the total number of bytes written.
+ * The entire buffer is cleared before writing.
+ */
+int tosc_writeMessage(char *buffer, const int len, const char *address,
     const char *fmt, ...);
 
-// a convenience function to (non-destructively) print a buffer containing
-// an OSC message to stdout.
-void tosc_printOscBuffer(const char *buffer, const int len);
+/**
+ * A convenience function to (non-destructively) print a buffer containing
+ * an OSC message to stdout.
+ */
+void tosc_printOscBuffer(char *buffer, const int len);
+
+/**
+ * A convenience function to (non-destructively) print a pre-parsed OSC message
+ * to stdout.
+ */
+void tosc_printMessage(tosc_message *o);
 
 #ifdef __cplusplus
 }

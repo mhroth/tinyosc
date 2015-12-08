@@ -83,12 +83,10 @@ void receive(char *buffer, int len) {
     const uint64_t timetag = tosc_getTimetag(&bundle);
     tosc_message osc;
     while (tosc_getNextMessage(&bundle, &osc)) {
-      handleMessage(&osc, timetag);
+      tosc_printMessage(&osc);
     }
   } else {
-    tosc_message osc;
-    tosc_parseMessage(&osc, buffer, len);
-    handleMessage(&osc, 0L);
+    tosc_printOscBuffer(buffer, len);
   }
 }
 ```

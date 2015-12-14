@@ -88,6 +88,11 @@ int32_t tosc_getNextInt32(tosc_message *o);
 int64_t tosc_getNextInt64(tosc_message *o);
 
 /**
+ * Returns the next 64-bit timetag. Does not check buffer bounds.
+ */
+uint64_t tosc_getNextTimetag(tosc_message *o);
+
+/**
  * Returns the next 32-bit float. Does not check buffer bounds.
  */
 float tosc_getNextFloat(tosc_message *o);

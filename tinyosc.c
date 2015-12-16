@@ -289,7 +289,7 @@ void tosc_printMessage(tosc_message *osc) {
       }
       case 'm': {
         char *m = tosc_getNextMidi(osc);
-        printf(" midi:%02X%02X%02X%02X", m[0], m[1], m[2], m[3]);
+        printf(" 0x%02X%02X%02X%02X", m[0], m[1], m[2], m[3]);
         break;
       }
       case 'f': printf(" %g", tosc_getNextFloat(osc)); break;

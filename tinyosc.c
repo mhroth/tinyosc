@@ -211,7 +211,7 @@ static uint32_t tosc_vwrite(char *buffer, const int len,
         i += 4;
         break;
       }
-      case 't'
+      case 't':
       case 'h': {
         if (i + 8 > len) return -3;
         const uint64_t k = (uint64_t) va_arg(ap, long long);
@@ -289,7 +289,7 @@ void tosc_printMessage(tosc_message *osc) {
       }
       case 'm': {
         char *m = tosc_getNextMidi(osc);
-        printf(" midi:%02X%02X%02X%02X", m[0], m[1], m[2], m[3])
+        printf(" midi:%02X%02X%02X%02X", m[0], m[1], m[2], m[3]);
         break;
       }
       case 'f': printf(" %g", tosc_getNextFloat(osc)); break;

@@ -32,8 +32,8 @@
 int tosc_parseMessage(tosc_message *o, char *buffer, const int len) {
   // NOTE(mhroth): if there's a comma in the address, that's weird
   int i = 0;
-  while (i < len && buffer[i] != '\0') ++i; // find the null-terimated address
-  while (i < len && buffer[i] != ',') ++i; // find the comma which starts the format string
+  while (buffer[i] != '\0') ++i; // find the null-terimated address
+  while (buffer[i] != ',') ++i; // find the comma which starts the format string
   if (i >= len) return -1; // error while looking for format string
   // format string is null terminated
   o->format = buffer + i + 1; // format starts after comma
@@ -142,6 +142,12 @@ void tosc_getNextBlob(tosc_message *o, const char **buffer, int *len) {
   }
 }
 
+char *tosc_getNextMidi(tosc_message *o) {
+  char *m = o->marker;
+  o->marker += 4;
+  return m;
+}
+
 void tosc_writeBundle(tosc_bundle *b, uint64_t timetag, char *buffer, const int len) {
   *((uint64_t *) buffer) = htonll(BUNDLE_ID);
   *((uint64_t *) (buffer + 8)) = htonll(timetag);
@@ -192,6 +198,13 @@ static uint32_t tosc_vwrite(char *buffer, const int len,
         break;
       }
       case 'i': {
+        if (i + 4 > len) return -3;
+        const uint32_t k = (uint32_t) va_arg(ap, int);
+        *((uint32_t *) (buffer+i)) = htonl(k);
+        i += 4;
+        break;
+      }
+      case 'm': {
         if (i + 4 > len) return -3;
         const uint32_t k = (uint32_t) va_arg(ap, int);
         *((uint32_t *) (buffer+i)) = htonl(k);
@@ -272,6 +285,11 @@ void tosc_printMessage(tosc_message *osc) {
         tosc_getNextBlob(osc, &b, &n);
         printf(" [%i]", n); // print length of blob
         for (int j = 0; j < n; ++j) printf("%02X", b[j] & 0xFF); // print blob bytes
+        break;
+      }
+      case 'm': {
+        char *m = tosc_getNextMidi(osc);
+        printf(" midi:%02X%02X%02X%02X", m[0], m[1], m[2], m[3])
         break;
       }
       case 'f': printf(" %g", tosc_getNextFloat(osc)); break;

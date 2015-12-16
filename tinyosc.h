@@ -115,6 +115,12 @@ const char *tosc_getNextString(tosc_message *o);
 void tosc_getNextBlob(tosc_message *o, const char **buffer, int *len);
 
 /**
+ * Returns the next set of midi bytes. Does not check bounds.
+ * Bytes from MSB to LSB are: port id, status byte, data1, data2.
+ */
+char *tosc_getNextMidi(tosc_message *o);
+
+/**
  * Parse a buffer containing an OSC message.
  * The contents of the buffer are NOT copied.
  * The tosc_message struct only points at relevant parts of the original buffer.

@@ -247,7 +247,7 @@ uint32_t tosc_writeNextMessage(tosc_bundle *b,
   const uint32_t i = tosc_vwrite(
       b->marker+4, b->bufLen-b->bundleLen-4, address, format, ap);
   va_end(ap);
-  *((int32_t *) b->marker) = htonl(i); // write the length of the message
+  *((uint32_t *) b->marker) = htonl(i); // write the length of the message
   b->marker += (4 + i);
   b->bundleLen += (4 + i);
   return i;

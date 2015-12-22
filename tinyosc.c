@@ -142,8 +142,8 @@ void tosc_getNextBlob(tosc_message *o, const char **buffer, int *len) {
   }
 }
 
-char *tosc_getNextMidi(tosc_message *o) {
-  char *m = o->marker;
+unsigned char *tosc_getNextMidi(tosc_message *o) {
+  unsigned char *m = (unsigned char *) o->marker;
   o->marker += 4;
   return m;
 }
@@ -206,8 +206,8 @@ static uint32_t tosc_vwrite(char *buffer, const int len,
       }
       case 'm': {
         if (i + 4 > len) return -3;
-        const uint32_t k = (uint32_t) va_arg(ap, int);
-        *((uint32_t *) (buffer+i)) = htonl(k);
+        const unsigned char *const k = (unsigned char *) va_arg(ap, void *);
+        memcpy(buffer+i, k, 4);
         i += 4;
         break;
       }
@@ -288,7 +288,7 @@ void tosc_printMessage(tosc_message *osc) {
         break;
       }
       case 'm': {
-        char *m = tosc_getNextMidi(osc);
+        unsigned char *m = tosc_getNextMidi(osc);
         printf(" 0x%02X%02X%02X%02X", m[0], m[1], m[2], m[3]);
         break;
       }

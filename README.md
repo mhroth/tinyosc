@@ -17,6 +17,8 @@ Due to its *tiny* nature, TinyOSC does not support all standard OSC features. Cu
   * `i`: int32
   * `h`: int64
   * `s`: string
+  * `m`: midi
+  * `t`: timetag
   * `T`: true
   * `F`: false
   * `I`: infinitum

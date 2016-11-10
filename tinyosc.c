@@ -20,10 +20,10 @@
 #include <stdio.h>
 #if _WIN32
 #include <winsock2.h>
-#define tosc_strncpy(_dst, _len, _src) strncpy_s(_dst, _len, _src, _TRUNCATE)
+#define tosc_strncpy(_dst, _src, _len) strncpy_s(_dst, _len, _src, _TRUNCATE)
 #else
 #include <netinet/in.h>
-#define tosc_strncpy(_dst, _len, _src) strncpy(_dst, _len, _src)
+#define tosc_strncpy(_dst, _src, _len) strncpy(_dst, _src, _len)
 #endif
 #if __unix__ && !__APPLE__
 #include <endian.h>
@@ -170,12 +170,12 @@ static uint32_t tosc_vwrite(char *buffer, const int len,
   memset(buffer, 0, len); // clear the buffer
   uint32_t i = (uint32_t) strlen(address);
   if (address == NULL || i >= len) return -1;
-  tosc_strncpy(buffer, len, address);
+  tosc_strncpy(buffer, address, len);
   i = (i + 4) & ~0x3;
   buffer[i++] = ',';
   int s_len = (int) strlen(format);
   if (format == NULL || (i + s_len) >= len) return -2;
-  tosc_strncpy(buffer+i, len-i-s_len, format);
+  tosc_strncpy(buffer+i, format, len-i-s_len);
   i = (i + 4 + s_len) & ~0x3;
 
   for (int j = 0; format[j] != '\0'; ++j) {
@@ -229,7 +229,7 @@ static uint32_t tosc_vwrite(char *buffer, const int len,
         const char *str = (const char *) va_arg(ap, void *);
         s_len = (int) strlen(str);
         if (i + s_len >= len) return -3;
-        tosc_strncpy(buffer+i, len-i-s_len, str);
+        tosc_strncpy(buffer+i, str, len-i-s_len);
         i = (i + 4 + s_len) & ~0x3;
         break;
       }

@@ -14,16 +14,22 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <stddef.h>
+#include <stdarg.h>
+#include <string.h>
+#include <stdio.h>
+#if _WIN32
+#include <winsock2.h>
+#define tosc_strncpy(_dst, _len, _src) strncpy_s(_dst, _len, _src, _TRUNCATE)
+#else
 #include <netinet/in.h>
+#define tosc_strncpy(_dst, _len, _src) strncpy(_dst, _len, _src)
+#endif
 #if __unix__ && !__APPLE__
 #include <endian.h>
 #define htonll(x) htobe64(x)
 #define ntohll(x) be64toh(x)
 #endif
-#include <stddef.h>
-#include <stdarg.h>
-#include <string.h>
-#include <stdio.h>
 #include "tinyosc.h"
 
 #define BUNDLE_ID 0x2362756E646C6500L // "#bundle"
@@ -164,12 +170,12 @@ static uint32_t tosc_vwrite(char *buffer, const int len,
   memset(buffer, 0, len); // clear the buffer
   uint32_t i = (uint32_t) strlen(address);
   if (address == NULL || i >= len) return -1;
-  strcpy(buffer, address);
+  tosc_strncpy(buffer, len, address);
   i = (i + 4) & ~0x3;
   buffer[i++] = ',';
   int s_len = (int) strlen(format);
   if (format == NULL || (i + s_len) >= len) return -2;
-  strcpy(buffer+i, format);
+  tosc_strncpy(buffer+i, len-i-s_len, format);
   i = (i + 4 + s_len) & ~0x3;
 
   for (int j = 0; format[j] != '\0'; ++j) {
@@ -223,7 +229,7 @@ static uint32_t tosc_vwrite(char *buffer, const int len,
         const char *str = (const char *) va_arg(ap, void *);
         s_len = (int) strlen(str);
         if (i + s_len >= len) return -3;
-        strcpy(buffer+i, str);
+        tosc_strncpy(buffer+i, len-i-s_len, str);
         i = (i + 4 + s_len) & ~0x3;
         break;
       }

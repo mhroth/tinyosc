@@ -1,3 +1,15 @@
+# About this fork
+
+This is a fork of [mhroth/tinyosc](https://github.com/mhroth/tinyosc) (follows the original README), adding: 
+
+- host-independent endianness handling [commit [90c7cd0](https://github.com/neonsoftware/tinyosc/commit/90c7cd0ae22726615b9b2191ff7e669a06f06925)]
+- two deep-copy funtions to the API, for the structures OSCMessage and OSCBundle [commit [a39f5d2e](https://github.com/neonsoftware/tinyosc/commit/a39f5d2e58a8f33971d6be78f7bdd158eab3bb5d)] 
+
+A merge request has been submitted.
+
+
+___
+
 # TinyOSC
 
 TinyOSC is a minimal [Open Sound Control](http://opensoundcontrol.org/) (OSC) library written in C. The typical use case is to parse a raw buffer received directly from a socket. Given the limited nature of the library it also tends to be quite fast. It doesn't hold on to much state and it doesn't do much error checking. If you have a good idea of what OSC packets you will receive and need to process them quickly, this library might be for you.

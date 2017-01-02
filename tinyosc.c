@@ -25,14 +25,52 @@
 #include <netinet/in.h>
 #define tosc_strncpy(_dst, _src, _len) strncpy(_dst, _src, _len)
 #endif
-#if __unix__ && !__APPLE__
-#include <endian.h>
-#define htonll(x) htobe64(x)
-#define ntohll(x) be64toh(x)
-#endif
 #include "tinyosc.h"
 
-#define BUNDLE_ID 0x2362756E646C6500L // "#bundle"
+const char bundle_id[] = {'#', 'b', 'u', 'n', 'd', 'l', 'e', 0}; // "#bundle"
+
+/** The OSC protocol specifies big-endian data transfer, and this must be enforced.
+  * The following endianness functions are completely independent on the host platform, which 
+  * maximizes portability, as illustrated within Rob Pike's article 'The data order fallacy'
+  * (https://commandcenter.blogspot.fr/2012/04/byte-order-fallacy.html) 
+  */
+
+/* fills an uint32_t value into a big-endian bytes array */
+void encode_uint32_t(uint32_t val, char *data)
+{
+  uint8_t *v = (uint8_t *)&val;
+  data[3] = *(v);
+  data[2] = *(v + 1);
+  data[1] = *(v + 2);
+  data[0] = *(v + 3);
+}
+
+/* reads an uint32_t from a big-endian bytes array */
+uint32_t decode_uint32_t(char *data)
+{
+  return ((uint32_t)data[3] << 0) | ((uint32_t)data[2] << 8) | ((uint32_t)data[1] << 16) | ((uint32_t)data[0] << 24);
+}
+
+/*  fills an uint64_t value into a big-endian bytes array */
+void encode_uint64_t(uint64_t val, char *data)
+{
+  uint8_t *v = (uint8_t *)&val;
+  data[7] = *v;
+  data[6] = *(v + 1);
+  data[5] = *(v + 2);
+  data[4] = *(v + 3);
+  data[3] = *(v + 4);
+  data[2] = *(v + 5);
+  data[1] = *(v + 6);
+  data[0] = *(v + 7);
+}
+
+/* reads an uint64_t from a big-endian bytes array */
+uint64_t decode_uint64_t(char *data)
+{
+  return ((uint64_t)data[7] << 0) | ((uint64_t)data[6] << 8) | ((uint64_t)data[5] << 16) | ((uint64_t)data[4] << 24) |
+         ((uint64_t)data[3] << 32) | ((uint64_t)data[2] << 40) | ((uint64_t)data[1] << 48) | ((uint64_t)data[0] << 56);
+}
 
 // http://opensoundcontrol.org/spec-1_0
 int tosc_parseMessage(tosc_message *o, char *buffer, const int len) {
@@ -57,8 +95,8 @@ int tosc_parseMessage(tosc_message *o, char *buffer, const int len) {
 }
 
 // check if first eight bytes are '#bundle '
-bool tosc_isBundle(const char *buffer) {
-  return ((*(const int64_t *) buffer) == htonll(BUNDLE_ID));
+bool tosc_isBundle(const char *buffer) { 
+  return memcmp(bundle_id, buffer, 8) == 0; 
 }
 
 void tosc_parseBundle(tosc_bundle *b, char *buffer, const int len) {
@@ -69,7 +107,7 @@ void tosc_parseBundle(tosc_bundle *b, char *buffer, const int len) {
 }
 
 uint64_t tosc_getTimetag(tosc_bundle *b) {
-  return ntohll(*((uint64_t *) (b->buffer+8)));
+  return decode_uint64_t(b->buffer + 8);
 }
 
 uint32_t tosc_getBundleLength(tosc_bundle *b) {
@@ -78,7 +116,7 @@ uint32_t tosc_getBundleLength(tosc_bundle *b) {
 
 bool tosc_getNextMessage(tosc_bundle *b, tosc_message *o) {
   if ((b->marker - b->buffer) >= b->bundleLen) return false;
-  uint32_t len = (uint32_t) ntohl(*((int32_t *) b->marker));
+  uint32_t len = decode_uint32_t(b->marker);
   tosc_parseMessage(o, b->marker+4, len);
   b->marker += (4 + len); // move marker to next bundle element
   return true;
@@ -98,13 +136,13 @@ uint32_t tosc_getLength(tosc_message *o) {
 
 int32_t tosc_getNextInt32(tosc_message *o) {
   // convert from big-endian (network btye order)
-  const int32_t i = (int32_t) ntohl(*((uint32_t *) o->marker));
+  const int32_t i = decode_uint32_t(o->marker);
   o->marker += 4;
   return i;
 }
 
 int64_t tosc_getNextInt64(tosc_message *o) {
-  const int64_t i = (int64_t) ntohll(*((uint64_t *) o->marker));
+  const int64_t i = (int64_t)decode_uint64_t(o->marker);
   o->marker += 8;
   return i;
 }
@@ -115,13 +153,13 @@ uint64_t tosc_getNextTimetag(tosc_message *o) {
 
 float tosc_getNextFloat(tosc_message *o) {
   // convert from big-endian (network btye order)
-  const uint32_t i = ntohl(*((uint32_t *) o->marker));
+  const uint32_t i = decode_uint32_t(o->marker);
   o->marker += 4;
   return *((float *) (&i));
 }
 
 double tosc_getNextDouble(tosc_message *o) {
-  const uint64_t i = ntohll(*((uint64_t *) o->marker));
+  const uint64_t i = decode_uint64_t(o->marker);
   o->marker += 8;
   return *((double *) (&i));
 }
@@ -136,7 +174,7 @@ const char *tosc_getNextString(tosc_message *o) {
 }
 
 void tosc_getNextBlob(tosc_message *o, const char **buffer, int *len) {
-  int i = (int) ntohl(*((uint32_t *) o->marker)); // get the blob length
+  int i = decode_uint32_t(o->marker); // get the blob length
   if (o->marker + 4 + i <= o->buffer + o->len) {
     *len = i; // length of blob
     *buffer = o->marker + 4;
@@ -155,8 +193,8 @@ unsigned char *tosc_getNextMidi(tosc_message *o) {
 }
 
 void tosc_writeBundle(tosc_bundle *b, uint64_t timetag, char *buffer, const int len) {
-  *((uint64_t *) buffer) = htonll(BUNDLE_ID);
-  *((uint64_t *) (buffer + 8)) = htonll(timetag);
+  memcpy(buffer, bundle_id, 8);
+  encode_uint64_t(timetag, buffer + 8);
 
   b->buffer = buffer;
   b->marker = buffer + 16;
@@ -184,7 +222,7 @@ static uint32_t tosc_vwrite(char *buffer, const int len,
         const uint32_t n = (uint32_t) va_arg(ap, int); // length of blob
         if (i + 4 + n > len) return -3;
         char *b = (char *) va_arg(ap, void *); // pointer to binary data
-        *((uint32_t *) (buffer+i)) = htonl(n); i += 4;
+        encode_uint32_t(n, (buffer + i)); i += 4;
         memcpy(buffer+i, b, n);
         i = (i + 3 + n) & ~0x3;
         break;
@@ -192,21 +230,21 @@ static uint32_t tosc_vwrite(char *buffer, const int len,
       case 'f': {
         if (i + 4 > len) return -3;
         const float f = (float) va_arg(ap, double);
-        *((uint32_t *) (buffer+i)) = htonl(*((uint32_t *) &f));
+        encode_uint32_t(f, (buffer + i));
         i += 4;
         break;
       }
       case 'd': {
         if (i + 8 > len) return -3;
         const double f = (double) va_arg(ap, double);
-        *((uint64_t *) (buffer+i)) = htonll(*((uint64_t *) &f));
+        encode_uint64_t(f, buffer + i);
         i += 8;
         break;
       }
       case 'i': {
         if (i + 4 > len) return -3;
         const uint32_t k = (uint32_t) va_arg(ap, int);
-        *((uint32_t *) (buffer+i)) = htonl(k);
+        encode_uint32_t(k, (buffer + i));
         i += 4;
         break;
       }
@@ -221,7 +259,7 @@ static uint32_t tosc_vwrite(char *buffer, const int len,
       case 'h': {
         if (i + 8 > len) return -3;
         const uint64_t k = (uint64_t) va_arg(ap, long long);
-        *((uint64_t *) (buffer+i)) = htonll(k);
+        encode_uint64_t(k, buffer + 1);
         i += 8;
         break;
       }
@@ -253,7 +291,7 @@ uint32_t tosc_writeNextMessage(tosc_bundle *b,
   const uint32_t i = tosc_vwrite(
       b->marker+4, b->bufLen-b->bundleLen-4, address, format, ap);
   va_end(ap);
-  *((uint32_t *) b->marker) = htonl(i); // write the length of the message
+  encode_uint32_t(i, b->marker); // write the length of the message
   b->marker += (4 + i);
   b->bundleLen += (4 + i);
   return i;

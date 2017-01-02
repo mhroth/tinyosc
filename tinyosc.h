@@ -165,6 +165,18 @@ void tosc_printOscBuffer(char *buffer, const int len);
  */
 void tosc_printMessage(tosc_message *o);
 
+/**
+ * A convenience function to deep-copy an OSC message
+ * The destination message's buffer must have been allocated by the caller.
+ */
+int tosc_copy_message(tosc_message *dst, tosc_message *src);
+
+/**
+ * A convenience function to deep-copy an OSC message
+ * The destination bundle's buffer must have been allocated by the caller.
+ */
+int tosc_copy_bundle(tosc_bundle *dst, tosc_bundle *src);
+
 #ifdef __cplusplus
 }
 #endif

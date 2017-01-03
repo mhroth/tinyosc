@@ -18,6 +18,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
+#include <inttypes.h>
 #if _WIN32
 #include <winsock2.h>
 #define tosc_strncpy(_dst, _src, _len) strncpy_s(_dst, _len, _src, _TRUNCATE)
@@ -301,8 +302,8 @@ void tosc_printMessage(tosc_message *osc) {
       case 'f': printf(" %g", tosc_getNextFloat(osc)); break;
       case 'd': printf(" %g", tosc_getNextDouble(osc)); break;
       case 'i': printf(" %d", tosc_getNextInt32(osc)); break;
-      case 'h': printf(" %lld", tosc_getNextInt64(osc)); break;
-      case 't': printf(" %lld", tosc_getNextTimetag(osc)); break;
+      case 'h': printf(" %" PRId64, tosc_getNextInt64(osc)); break;  // PRId64 chooses corrent format (ld,lld,..)
+      case 't': printf(" %" PRIu64, tosc_getNextTimetag(osc)); break; // PRIu64 chooses corrent format (lu,llu,..)
       case 's': printf(" %s", tosc_getNextString(osc)); break;
       case 'F': printf(" false"); break;
       case 'I': printf(" inf"); break;

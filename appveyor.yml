@@ -1,0 +1,24 @@
+environment:
+  home: C:\projects
+
+version: '{branch}-{build}'
+
+os: Visual Studio 2015
+
+before_build:
+  - cmd: 'cmake --version'
+  # creating an empty build_main.c
+  - cmd: cd %home%\tinyosc
+  - cmd: 'echo #include "tinyosc.h" >> build_main.c'
+  - cmd: echo int main(int argc, char *argv[]) { return 0; } >> build_main.c
+  # creating the CMakeLists.txt so that cmake can create the Visual Studio project (.sln)
+  - cmd: echo project (tinyosc) >> CMakeLists.txt
+  - cmd: echo add_executable(tinyosc build_main.c tinyosc.c) >> CMakeLists.txt
+  # generating the Visual Studio .sln project with cmake
+  - cmd: cmake .
+
+build:
+  project: C:\projects\tinyosc\tinyosc.sln
+
+configuration:
+  - Release

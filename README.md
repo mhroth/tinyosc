@@ -4,6 +4,7 @@ This is a fork of [mhroth/tinyosc](https://github.com/mhroth/tinyosc) (follows t
 
 - host-independent endianness handling [commit [90c7cd0](https://github.com/neonsoftware/tinyosc/commit/90c7cd0ae22726615b9b2191ff7e669a06f06925)]
 - two deep-copy funtions to the API, for the structures OSCMessage and OSCBundle [commit [a39f5d2e](https://github.com/neonsoftware/tinyosc/commit/a39f5d2e58a8f33971d6be78f7bdd158eab3bb5d)] 
+- Travis CI and Appveyor continuous buils.
 
 A merge request has been submitted.
 

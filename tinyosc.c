@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, Martin Roth (mhroth@gmail.com)
+ * Copyright (c) 2015-2018, Martin Roth (mhroth@gmail.com)
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -152,6 +152,14 @@ unsigned char *tosc_getNextMidi(tosc_message *o) {
   unsigned char *m = (unsigned char *) o->marker;
   o->marker += 4;
   return m;
+}
+
+tosc_message *tosc_reset(tosc_message *o) {
+  int i = 0;
+  while (o->format[i] != '\0') ++i;
+  i = (i + 4) & ~0x3; // advance to the next multiple of 4 after trailing '\0'
+  o->marker = o->format + i - 1; // -1 to account for ',' format prefix
+  return o;
 }
 
 void tosc_writeBundle(tosc_bundle *b, uint64_t timetag, char *buffer, const int len) {

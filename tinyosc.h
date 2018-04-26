@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, Martin Roth (mhroth@gmail.com)
+ * Copyright (c) 2015-2018, Martin Roth (mhroth@gmail.com)
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -121,6 +121,13 @@ void tosc_getNextBlob(tosc_message *o, const char **buffer, int *len);
  * Bytes from MSB to LSB are: port id, status byte, data1, data2.
  */
 unsigned char *tosc_getNextMidi(tosc_message *o);
+
+/**
+ * Resets the read head to the first element.
+ *
+ * @return  The same tosc_message pointer.
+ */
+tosc_message *tosc_reset(tosc_message *o);
 
 /**
  * Parse a buffer containing an OSC message.

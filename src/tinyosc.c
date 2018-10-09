@@ -36,8 +36,10 @@
 #define ntohl(x) htonl(x)
 
 // THIS IS GUESSWORK
-#define htonll(x) ( (htonl( (uint32_t)(x) ) << 32) | (htonl( x >> 32 ) ) )
-
+#define htonll(x) (x)
+//( (htonl( (uint32_t)(x) ) << 32) | (htonl( x >> 32 ) ) )
+// ALTERNATIVE?
+/*
 #define htobe64(x)  \
     (__extension__ ({ \
         uint64_t __temp = (x); \
@@ -45,8 +47,9 @@
         uint32_t __high = htobe32((uint32_t)(__temp >> 32)); \
         (((uint64_t)__low) << 32) | __high; \
     }))
-
+*/
 #endif
+
 #define tosc_strncpy(_dst, _src, _len) strncpy(_dst, _src, _len)
 
 #else

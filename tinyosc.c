@@ -18,6 +18,38 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
+
+
+#if defined(ARDUINO) && ARDUINO >= 100
+#include "Arduino.h"
+#ifndef UTIL_H
+#define UTIL_H
+
+#define htons(x) ( ((x)<< 8 & 0xFF00) | \
+                   ((x)>> 8 & 0x00FF) )
+#define ntohs(x) htons(x)
+
+#define htonl(x) ( ((x)<<24 & 0xFF000000UL) | \
+                   ((x)<< 8 & 0x00FF0000UL) | \
+                   ((x)>> 8 & 0x0000FF00UL) | \
+                   ((x)>>24 & 0x000000FFUL) )
+#define ntohl(x) htonl(x)
+
+// THIS IS GUESSWORK
+#define htonll(x) ( (htonl( (uint32_t)(x) ) << 32) | (htonl( x >> 32 ) ) )
+
+#define htobe64(x)  \
+    (__extension__ ({ \
+        uint64_t __temp = (x); \
+        uint32_t __low = htobe32((uint32_t)__temp); \
+        uint32_t __high = htobe32((uint32_t)(__temp >> 32)); \
+        (((uint64_t)__low) << 32) | __high; \
+    }))
+
+#endif
+#define tosc_strncpy(_dst, _src, _len) strncpy(_dst, _src, _len)
+
+#else
 #if _WIN32
 #include <winsock2.h>
 #define tosc_strncpy(_dst, _src, _len) strncpy_s(_dst, _len, _src, _TRUNCATE)
@@ -29,6 +61,7 @@
 #include <endian.h>
 #define htonll(x) htobe64(x)
 #define ntohll(x) be64toh(x)
+#endif
 #endif
 #include "tinyosc.h"
 

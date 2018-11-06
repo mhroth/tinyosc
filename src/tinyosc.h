@@ -144,7 +144,7 @@ bool fullMatch(const char* address);
 /**
  * Returns a pointer to the format block of the OSC buffer.
  */
-char* getFormat();
+char* getTypeTags();
 
 /**
  * Returns the length in bytes of this message.

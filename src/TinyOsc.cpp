@@ -250,7 +250,7 @@ char* TinyOsc::getAddress() {
   return o->buffer;
 }
 
-char* TinyOsc::getFormat() {
+char* TinyOsc::getTypeTags() {
   return o->format;
 }
 

@@ -14,8 +14,8 @@
 #include <ESP8266WiFi.h>
 
 // Please change the following values with your network settings:
-const char* ssid     = "PetitPet";
-const char* password = "freedomostie";
+const char* ssid     = "NETWORK NAME";
+const char* password = "NETWORK PASSWORD";
 
 IPAddress ip(192, 168, 25, 10);
 IPAddress gateway(192, 168, 25, 1);
@@ -89,18 +89,18 @@ void setup() {
 void receivedOscMessage() {
 
 
-  // GET THE FORMAT AS A C STRING
-  char * format = osc.getFormat();
+  // GET THE TYPE TAGS AS A C STRING POINTER
+  char * typeTags = osc.getTypeTags();
 
 
   Serial.println("***OSC***");
   Serial.print("Address: ");
   Serial.println(osc.getAddress());
   Serial.print("Type tags: ");
-  Serial.println(format);
+  Serial.println(typeTags);
 
   // IF THE ADDRESS IS /led AND THERE IS AN INTEGER ('i')
-  if ( osc.fullMatch("/led") && format[0] == 'i' ) {
+  if ( osc.fullMatch("/led") && typeTags[0] == 'i' ) {
     int state = osc.getNextInt32();
     digitalWrite(LED_BUILTIN, state);
     digitalWrite(4, state);

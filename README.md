@@ -39,8 +39,8 @@ void receivedOscMessage() {
     // IS IT PART OF A BUNDLE?
     bool isBundled = osc.isBundled();
 
-    // GET THE FORMAT C STRING
-    char * format = osc.getFormat();
+    // GET THE FORMAT C STRING POINTER
+    char * typeTags = osc.getTypeTags();
 
      Serial.println("***OSC***");
 
@@ -50,7 +50,7 @@ void receivedOscMessage() {
       Serial.print("Address: ");
       Serial.println(osc.getAddress());
       Serial.print("Type tags: ");
-      Serial.println(format);
+      Serial.println(typeTags);
 
       if ( osc.fullMatch("/test") ) {
         Serial.print("Yes, this message has the address /test");
@@ -59,8 +59,8 @@ void receivedOscMessage() {
       Serial.print("Arguments : ");
 
       // LOOP THROUGH THE FORMAT STRING (IT ENDS WITH A 0)
-      for (int i = 0; format[i] != '\0'; i++) {
-        switch (format[i]) {
+      for (int i = 0; typeTags[i] != '\0'; i++) {
+        switch (typeTags[i]) {
           case 'f': Serial.print( osc.getNextFloat() ); break;
           case 'i': Serial.print( osc.getNextInt32() ); break;
           // returns NULL if the buffer length is exceeded
@@ -110,7 +110,7 @@ char udpTxBuffer[UDP_TX_BUFFER_MAX_SIZE];
 
 ```C
    // <TinyOsc>.writeMessage( name of buffer to write to , the maximum size of the buffer , the address , the format string , data... )
-    // THE FORMAT STRING MUST MATCH THE DATA
+    // THE TYPE TAG STRING MUST MATCH THE DATA
     // 'f':32-bit float, 's':ascii string, 'i':32-bit integer
     // IN THIS CASE, THE DATA IS 1.0 (float), "hello" (string) AND millis() (int)
     int udpTxBufferLength = osc.writeMessage( udpTxBuffer, UDP_TX_BUFFER_MAX_SIZE ,  "/ping",  "fsi",   1.0, "hello", millis() );

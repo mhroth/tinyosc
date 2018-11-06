@@ -4,7 +4,7 @@
 		"appversion" : 		{
 			"major" : 8,
 			"minor" : 0,
-			"revision" : 0,
+			"revision" : 1,
 			"architecture" : "x64",
 			"modernui" : 1
 		}
@@ -308,8 +308,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 148.0, 255.0, 104.0, 22.0 ],
-					"text" : "udpreceive 78900"
+					"patching_rect" : [ 148.0, 255.0, 97.0, 22.0 ],
+					"text" : "udpreceive 7890"
 				}
 
 			}

@@ -106,6 +106,13 @@ void reset();
 bool isABundle(const char *buffer);
 
 
+/**
+ * Parses the next message in a bundle. Returns true if successful.
+ * False otherwise.
+ */
+bool getNextMessage();
+
+
 
 public:
 
@@ -122,11 +129,6 @@ bool isBundled();
  */
 // uint64_t getBundleTimetag();
 
-/**
- * Parses the next message in a bundle. Returns true if successful.
- * False otherwise.
- */
-bool getNextMessage();
 
 /**
  * Returns a point to the address block of the OSC buffer.

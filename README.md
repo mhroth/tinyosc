@@ -24,10 +24,19 @@ Due to its *tiny* nature, TinyOSC does not support all standard OSC features. Cu
   * `I`: infinitum
   * `N`: nil
 
-## Code Examples
-### Reading UDP OSC Messages and Bundles
-```C
 
+
+## Code Examples
+
+```C
+// Create a TinyOsc instance
+TinyOsc osc;
+```
+
+### Receiving UDP OSC Messages
+
+```C
+// Parsing an OSC message from a UDP buffer
 #define UDP_RX_BUFFER_MAX_SIZE 256
 char udpRxBuffer[UDP_RX_BUFFER_MAX_SIZE];
 
@@ -36,45 +45,13 @@ char udpRxBuffer[UDP_RX_BUFFER_MAX_SIZE];
 // FUNCTION THAT IS CALLED FOR EVERY RECEIVED MESSAGE
 void receivedOscMessage() {
 
-    // IS IT PART OF A BUNDLE?
-    bool isBundled = osc.isBundled();
-
-    // GET THE FORMAT C STRING POINTER
-    char * typeTags = osc.getTypeTags();
-
-     Serial.println("***OSC***");
-
-      if ( isBundled ) Serial.println("This message is part of a bundle");
-      else Serial.println("This message is not part of a bundle");
-      
-      Serial.print("Address: ");
-      Serial.println(osc.getAddress());
-      Serial.print("Type tags: ");
-      Serial.println(typeTags);
-
-      if ( osc.fullMatch("/test") ) {
-        Serial.print("Yes, this message has the address /test");
-      }
-
-      Serial.print("Arguments : ");
-
-      // LOOP THROUGH THE FORMAT STRING (IT ENDS WITH A 0)
-      for (int i = 0; typeTags[i] != '\0'; i++) {
-        switch (typeTags[i]) {
-          case 'f': Serial.print( osc.getNextFloat() ); break;
-          case 'i': Serial.print( osc.getNextInt32() ); break;
-          // returns NULL if the buffer length is exceeded
-          case 's': Serial.print( osc.getNextString() ); break;
-          default: continue;
-        }
-        Serial.print(" ");
-      }
-      Serial.println();  
+  // AN OSC MESSAGE IS RECEIVED
+  // PARSE THE MESSAGE HERE WITH 
+  // osc.fullMatch() TO CHECK THE ADDRESS
+  // osc.getNextInt32(), osc.getNextFloat(), osc.getNextString(), etc TO GET THE ARGUMENTS
 }
 
 void loop() {
-
-
 
 
 if ( udp.parsePacket() ) {
@@ -83,29 +60,104 @@ if ( udp.parsePacket() ) {
     // udp.read() RETURNS THE NUMBER OF chars THAT WERE RECEIVED 
     int packetSize = udp.read(udpRxBuffer, UDP_RECEIVE_BUFFER_MAX_SIZE);
 
-    Serial.print("Received packet of size ");
-    Serial.println(packetSize);
-    Serial.print("From ");
-    IPAddress remoteIp = udp.remoteIP();
-    Serial.println(remoteIp);
-
     // PARSE THE OSC MESSAGES FROM THE BUFFER
-    // <TinyOsc>.parse( buffer name, size of the data, callback function)
+    // osc.parse( buffer name, size of the data, callback function)
     // FOR EVERY PARSED OSC MESSAGE IN udpRxBuffer THE receivedOscMessage WILL BE CALLED
     osc.parse( udpRxBuffer, packetSize, receivedOscMessage);
 
   }
 }
 
-
-
 ```
 
+### PARSING OSC MESSAGES
 
-### Writing UDP OSC Messages
 ```C
-#define UDP_TX_BUFFER_MAX_SIZE 256
-char udpTxBuffer[UDP_TX_BUFFER_MAX_SIZE];
+/**
+ * Returns true if the address matches "/led".
+ */
+if (  osc.fullMatch("/led") ) {
+  // Get the first argument as an Arduino int
+  int argument = getNextInt32();
+}
+```
+
+```C
+/**
+ * Returns true if the address matches "/led" and 
+ the type tag string matches "i" (one OSC integers)
+ */
+if (  osc.fullMatch("/led","i") ) {
+  // Get the first argument as a long (Arduino long == OSC int)
+  long argument = osc.getNextInt32();
+}
+```
+
+```C
+/**
+ * Returns true if the address matches "/motor" and 
+ the type tag string matches "ii" (two OSC integers)
+ */
+if (  osc.fullMatch("/motor","ii") ) {
+  int firstArgument  = osc.getNextInt32();
+  int secondArgument = osc.getNextInt32();
+}
+```
+
+```C
+/**
+ * Returns true if the address matches "/rgb" and 
+ the type tag string matches "iii" (three OSC integers)
+ */
+if (  osc.fullMatch("/rgb","iii") ) {
+  int r  = osc.getNextInt32();
+  int g = osc.getNextInt32();
+  int b = osc.getNextInt32();
+}
+```
+
+```C
+/**
+ * Returns true if the address matches "/touch" and 
+ the type tag string matches "f" (one OSC float)
+ */
+if (  osc.fullMatch("/touch","f") ) {
+  int f  = osc.getNextFloat();
+}
+```
+
+### Debuging OSC Messages
+```C
+/**
+ * Returns a pointer to the address block of the OSC buffer.
+ */
+char * address = osc.getAddress();
+Serial.println(address);
+```
+```C
+/**
+ * Returns a pointer to the type tag block of the OSC buffer.
+ */
+char * typetags = osc.getTypeTags();
+Serial.println(typetags);
+```
+
+### Writing OSC Messages
+```C
+/**
+ * Writes an OSC packet to a buffer. Returns the total number of bytes written.
+ * The entire buffer is cleared before writing.
+ */
+uint32_t writeMessage(char *buffer, const int len, const char *address,
+    const char *fmt, ...);
+
+
+};
+```
+### Sending UDP OSC Messages
+```C
+#define TX_BUFFER_MAX_SIZE 256
+char txBuffer[TX_BUFFER_MAX_SIZE];
 ```
 
 ```C
@@ -113,13 +165,14 @@ char udpTxBuffer[UDP_TX_BUFFER_MAX_SIZE];
     // THE TYPE TAG STRING MUST MATCH THE DATA
     // 'f':32-bit float, 's':ascii string, 'i':32-bit integer
     // IN THIS CASE, THE DATA IS 1.0 (float), "hello" (string) AND millis() (int)
-    int udpTxBufferLength = osc.writeMessage( udpTxBuffer, UDP_TX_BUFFER_MAX_SIZE ,  "/ping",  "fsi",   1.0, "hello", millis() );
+    int txBufferLength = osc.writeMessage( txBuffer, TX_BUFFER_MAX_SIZE ,  "/ping",  "fsi",   1.0, "hello", millis() );
 
     // udpTxBuffer NOW CONTAINS THE OSC MESSAGE AND WE SEND IT OVER UDP
-    udp.beginPacket( udpTxIp , udpTxPort );
-    udp.write( udpTxBuffer ,  udpTxBufferLength );
+    udp.beginPacket( targetIp , targetPort );
+    udp.write( txBuffer ,  txBufferLength );
     udp.endPacket();
 ```
+
 
 
 

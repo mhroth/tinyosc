@@ -15,16 +15,16 @@
 
 // Please change the following values with your network settings:
 const char* ssid     = "NETWORK NAME";
-const char* password = "NETWORK PASSWORD";
+const char* password = "PASSWORD";
 
-IPAddress ip(192, 168, 25, 10);
-IPAddress gateway(192, 168, 25, 1);
-IPAddress subnet(255, 255, 255, 0);
+IPAddress myIp(192, 168, 25, 10);
+IPAddress networkGateway(192, 168, 25, 1);
+IPAddress networkSubnet(255, 255, 255, 0);
 
 // UDP
-int udpReceivePort = 7777;
-IPAddress udpTxIp = IPAddress(192, 168, 25, 125);
-int udpTxPort = 7890;
+int myReceivePort = 7777;
+IPAddress targetIp = IPAddress(192, 168, 25, 125);
+int targetPort = 7890;
 
 // INCLUDE ESP8266 UDP
 #include <WiFiUdp.h>
@@ -55,12 +55,12 @@ void setup() {
   Serial.println("***STARTING WIFI***");
 
   // BEGIN WIFI
-  WiFi.config(ip , gateway , subnet );
+  WiFi.config(myIp , networkGateway , networkSubnet );
   WiFi.begin(ssid, password);
 
   // WAIT UNTIL CONNECTED
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");
+    Serial.println("Trying to connect");
     delay(10);
   }
   //
@@ -71,7 +71,7 @@ void setup() {
   Serial.println( WiFi.localIP() );
   
 
-  udp.begin(udpReceivePort); // BEGIN LISTENING ON UDP PORT udpReceivePort
+  udp.begin(myReceivePort); // BEGIN LISTENING ON UDP PORT myReceivePort
 
   // SETUP THE BUILTIN LED
   pinMode(LED_BUILTIN, OUTPUT);
@@ -99,11 +99,20 @@ void receivedOscMessage() {
   Serial.print("Type tags: ");
   Serial.println(typeTags);
 
-  // IF THE ADDRESS IS /led AND THERE IS AN INTEGER ('i')
-  if ( osc.fullMatch("/led") && typeTags[0] == 'i' ) {
-    int state = osc.getNextInt32();
+  // IF THE ADDRESS IS /led AND THERE IS AN OSC int ('i') ARGUMENT
+  if ( osc.fullMatch("/led","i") ) {
+    // GET THE OSC int ARGUMENT AS AN ARDUINO int
+    int state = osc.getNextInt32(); 
+    // !NOTE THAT TO GET THE FULL RANGE OF AN OSC int, USE long LIKE THIS:
+    // long state = osc.getNextInt32();
     digitalWrite(LED_BUILTIN, state);
     digitalWrite(4, state);
+    
+  // ELSE IF THE ADDRESS IS /touch AND THERE IS A float ('f') ARGUMENT  
+  // (SOMETIMES APPLICATIONS SEND floats INSTEAD OF ints)
+  } else if ( osc.fullMatch("/touch","f") ) {
+    float f = osc.getNextFloat(); // GET THE float ARGUMENT
+    // DO SOMETHING WITH f HERE (UP TO YOU)...
   }
 
 }
@@ -156,7 +165,7 @@ void loop() {
     int udpTxBufferLength = osc.writeMessage( udpTxBuffer, UDP_TX_BUFFER_MAX_SIZE ,  "/button",  "i",   1 );
 
     // udpTxBuffer NOW CONTAINS THE OSC MESSAGE AND WE SEND IT OVER UDP
-    udp.beginPacket( udpTxIp , udpTxPort );
+    udp.beginPacket( targetIp , targetPort );
     udp.write( udpTxBuffer ,  udpTxBufferLength );
     udp.endPacket();
 
@@ -169,7 +178,7 @@ void loop() {
     int udpTxBufferLength = osc.writeMessage( udpTxBuffer, UDP_TX_BUFFER_MAX_SIZE ,  "/button",  "i",   0 );
 
     // udpTxBuffer NOW CONTAINS THE OSC MESSAGE AND WE SEND IT OVER UDP
-    udp.beginPacket( udpTxIp , udpTxPort );
+    udp.beginPacket( targetIp , targetPort );
     udp.write( udpTxBuffer ,  udpTxBufferLength );
     udp.endPacket();
   }

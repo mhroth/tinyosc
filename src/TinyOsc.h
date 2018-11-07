@@ -142,6 +142,11 @@ char* getAddress();
 bool fullMatch(const char* address);
 
 /**
+ * Returns true if the address and type tag matches.
+ */
+bool fullMatch(const char* address, const char * typetags);
+
+/**
  * Returns a pointer to the format block of the OSC buffer.
  */
 char* getTypeTags();

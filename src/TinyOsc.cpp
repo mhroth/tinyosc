@@ -331,6 +331,9 @@ bool TinyOsc::fullMatch(const char* address) {
     return (strcmp( o->buffer, address) == 0);
 }
 
+bool TinyOsc::fullMatch(const char* address, const char * typetags){
+   return (strcmp( o->buffer, address) == 0) && (strcmp( o->format, typetags) == 0) ;
+}
 
 uint32_t TinyOsc::writeMessage(char *buffer, const int len,
     const char *address, const char *format, ...) {

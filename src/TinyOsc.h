@@ -76,7 +76,7 @@ void parse(char *buffer, const int len, tOscCallbackFunction callback );
      	tosc_bundle* b;
      	tosc_message* o;
      	tosc_message message;
-     	callbackFunction callback;
+     	tOscCallbackFunction callback;
      	uint64_t timetag;
      	bool isPartOfABundle;
 

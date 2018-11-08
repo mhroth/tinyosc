@@ -170,7 +170,7 @@ TinyOsc::TinyOsc(){
 
 
 // http://opensoundcontrol.org/spec-1_0
-void TinyOsc::parse(char *buffer, const int len, callbackFunction callback) {
+void TinyOsc::parse(char *buffer, const int len, tOscCallbackFunction callback) {
  
   if ( callback == NULL ) return; 
 

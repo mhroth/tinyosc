@@ -48,7 +48,7 @@ typedef struct tosc_bundle {
 class TinyOsc
 {
 	 public:
-	 	typedef void (*callbackFunction)(void);
+	 	typedef void (*tOscCallbackFunction)(void);
 
 /*!
     @brief  Create an instance of the TinyOsc class.
@@ -67,7 +67,7 @@ class TinyOsc
  * The contents of the buffer are NOT copied.
  * Calls the callback for every message received in a bundle or not.
  */
-void parse(char *buffer, const int len, callbackFunction callback );
+void parse(char *buffer, const int len, tOscCallbackFunction callback );
 
  private:
      	char *buffer;

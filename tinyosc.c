@@ -321,3 +321,26 @@ void tosc_printMessage(tosc_message *osc) {
   }
   printf("\n");
 }
+
+int tosc_copy_message(tosc_message *dst, tosc_message *src)
+{
+  if (dst->len < src->len) {
+    return 0;
+  } // checking space is enough
+  memcpy(dst->buffer, src->buffer, src->len);
+  dst->len = src->len;
+  dst->marker = dst->buffer + (src->marker - src->buffer);
+  dst->format = dst->buffer + (src->format - src->buffer);
+  return 1;
+}
+
+int tosc_copy_bundle(tosc_bundle *dst, tosc_bundle *src)
+{
+  if (dst->bufLen < src->bundleLen) {
+    return 0;
+  } // checking space is enough
+  memcpy(dst->buffer, src->buffer, src->bundleLen);
+  dst->bundleLen = src->bundleLen;
+  dst->marker = dst->buffer + (src->marker - src->buffer);
+  return 1;
+}

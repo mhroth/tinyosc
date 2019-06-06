@@ -1,10 +1,7 @@
 
-// UDP BUFFERS
+// RECEIVE SERIAL DATA BUFFER
 #define BUFFER_MAX_SIZE 256
 unsigned char inputBuffer[BUFFER_MAX_SIZE];
-
-#define BUFFER_MAX_SIZE 256
-unsigned char outputBuffer[BUFFER_MAX_SIZE];
 
 // OSC PARSER AND PACKER
 #include <TinyOsc.h>
@@ -88,12 +85,11 @@ void loop() {
   if ( previousAnalogRead0 != newAnalogRead0) {
     previousAnalogRead0 = newAnalogRead0;
 
-    // STEP 1 : WRITE THE OSC MESSAGE INTO THE OUTPUT BUFFER outputBuffer
-    int oscMessageSize = osc.writeMessage( outputBuffer , BUFFER_MAX_SIZE,  "/a0",  "i",   newAnalogRead0 );
     slip.beginPacket();
     
     // STEP 2 : STREAM THE OSC MESSAGE THROUGH SLIP
-    slip.write(outputBuffer, oscMessageSize);
+    //slip.write(outputBuffer, oscMessageSize);
+    osc.writeMessage( &slip, "/a0",  "i",   newAnalogRead0 );
     
     slip.endPacket();
   }

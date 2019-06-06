@@ -24,6 +24,31 @@
 
 #include "Arduino.h"
 
+/*
+ based on http://stackoverflow.com/questions/809902/64-bit-ntohl-in-c
+ 
+ if the system is little endian, it will flip the bits
+ if the system is big endian, it'll do nothing
+ */
+template<typename T> 
+static inline T tosc_bigEndian(const T& x)
+{
+    const int one = 1;
+    const char sig = *(char*)&one;
+    if (sig == 0) return x; // for big endian machine just return the input
+    T ret;
+    int size = sizeof(T);
+    char* src = (char*)&x + sizeof(T) - 1;
+    char* dst = (char*)&ret;
+    while (size-- > 0){
+        *dst++ = *src--;
+    }
+    return ret;
+}
+
+
+
+
 #ifndef UTIL_H
 #define UTIL_H
 
@@ -65,18 +90,9 @@
 
 
 
-/*
-size_t TinyOsc::writeMessage(Print* output,
-    const char *address, const char *format, ...) {
-  va_list ap;
-  va_start(ap, format);
-  const uint32_t i = tosc_vwrite(buffer, len, address, format, ap);
-  va_end(ap);
-  return i; // return the total number of bytes written
-}
-*/
-// always writes a multiple of 4 bytes
 
+// always writes a multiple of 4 bytes
+/*
 static size_t tosc_vwrite(unsigned char *buffer, const size_t len,
     const char *address, const char *format, va_list ap) {
   memset(buffer, 0, len); // clear the buffer
@@ -136,15 +152,119 @@ static size_t tosc_vwrite(unsigned char *buffer, const size_t len,
   return i; // return the total number of bytes written
 }
 
-size_t TinyOsc::writeMessage(unsigned char *buffer, const size_t len,
-    const char *address, const char *format, ...) {
+size_t TinyOsc::writeMessage(unsigned char *buffer, const size_t len, const char *address, const char *format, ...) {
   va_list ap;
   va_start(ap, format);
-  const uint32_t i = tosc_vwrite(buffer, len, address, format, ap);
+  const size_t  i = tosc_vwrite(buffer, len, address, format, ap);
   va_end(ap);
   return i; // return the total number of bytes written
 }
+*/
+// always writes a multiple of 4 bytes
 
+static size_t tosc_vprint(Print* output, const char *address, const char *format, va_list ap) {
+  
+  uint8_t nullChar = '\0';
+
+  size_t i = strlen(address);
+  if (address == NULL ) return -1;
+  output->print(address);
+  output->write(nullChar);
+  i++; 
+
+  // pad the size
+  while ( (i % 4 ) ) {
+      output->write(nullChar);
+      i++; 
+  }
+  
+  output->write(',');
+  i++; 
+
+  size_t s_len = strlen(format);
+  if (format == NULL ) return -2;
+  output->print(format);
+  output->write(nullChar);
+  i += s_len + 1;
+
+   // pad the size
+  while ( (i % 4 ) ) {
+      output->write(nullChar);
+      i++; 
+  }
+
+
+  for (int j = 0; format[j] != '\0'; ++j) {
+    switch (format[j]) {
+      case 'b': {
+        const int n = va_arg(ap, int); // length of blob
+        
+        uint32_t n32 = tosc_bigEndian(n);
+        uint8_t * ptr = (uint8_t *) &n32;
+        output->write(ptr, 4);
+
+        unsigned char *b = (unsigned char *) va_arg(ap, void *); // pointer to binary data
+        output->write(b, n);
+
+        i += (1 + n);
+        // pad the size
+        while ( (i % 4 ) ) {
+            output->write(nullChar);
+            i++; 
+        }
+
+        break;
+      }
+      case 'f': {
+        const float v = (float) va_arg(ap, double);
+        uint32_t v32 = tosc_bigEndian(v);
+        uint8_t * ptr = (uint8_t *) &v32;
+        output->write(ptr, 4);
+        i+=4;
+        break;
+      }
+      case 'i': {
+        const uint32_t  v = (uint32_t ) va_arg(ap, int);
+        uint32_t v32 = tosc_bigEndian(v);
+        uint8_t * ptr = (uint8_t *) &v32;
+        output->write(ptr, 4);
+        i+=4;
+        break;
+      }
+      case 's': {
+        const char *str = (const char *) va_arg(ap, void *);
+        s_len = strlen(str);
+        output->print(str);
+          output->write(nullChar);
+         i += s_len + 1;
+
+         // pad the size
+        while ( (i % 4 ) ) {
+            output->write(nullChar);
+            i++; 
+        }
+
+        break;
+      }
+      case 'T': // true
+      case 'F': // false
+      case 'N': // nil
+      case 'I': // infinitum
+          break;
+      default: return -4; // unsupported type
+    }
+  }
+
+  return i; // return the total number of bytes written
+}
+
+
+void TinyOsc::writeMessage(Print* output, const char *address, const char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  tosc_vprint(output, address, format, ap);
+  va_end(ap);
+}
 
 
 
@@ -212,7 +332,7 @@ bool TinyOsc::isABundle(const unsigned char  *buffer) {
 
 
 void TinyOsc::parseBundle(unsigned char  *buffer, const size_t len) {
-  b->buffer = (char *) buffer;
+  b->buffer =  buffer;
   b->marker = buffer + 16; // move past '#bundle ' and timetag fields
   b->bufLen = len;
   b->bundleLen = len;

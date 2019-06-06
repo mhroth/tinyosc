@@ -1,10 +1,10 @@
 
 // UDP BUFFERS
 #define BUFFER_MAX_SIZE 256
-char inputBuffer[BUFFER_MAX_SIZE];
+unsigned char inputBuffer[BUFFER_MAX_SIZE];
 
 #define BUFFER_MAX_SIZE 256
-char outputBuffer[BUFFER_MAX_SIZE];
+unsigned char outputBuffer[BUFFER_MAX_SIZE];
 
 // OSC PARSER AND PACKER
 #include <TinyOsc.h>
@@ -12,7 +12,7 @@ TinyOsc osc;
 
 // SLIP PARSER AND PACKER
 #include <TinySlip.h>
-TinySlip slip;
+TinySlip slip(&Serial);
 
 
 int previousAnalogRead0;
@@ -34,8 +34,7 @@ void setup() {
 // FUNCTION THAT IS CALLED FOR EVERY RECEIVED MESSAGE
 void receivedOscMessage() {
 
-  
-
+ 
   if ( osc.fullMatch("/led","i") ) {
     // GET THE OSC int ARGUMENT AS AN ARDUINO int
     int state = osc.getNextInt32(); 
@@ -70,16 +69,18 @@ void receivedOscMessage() {
 void loop() {
 
 
-  while ( slip.parseStream(&Serial,inputBuffer,BUFFER_MAX_SIZE) ) {
+  size_t packetLength = slip.parsePacket(inputBuffer, BUFFER_MAX_SIZE);
+
+ // IF WE RECEIVED A PACKET
+  if ( packetLength > 0 ) {
     
-    int bufferSize = slip.available();
-
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-
     // PARSE THE OSC MESSAGES FROM THE BUFFER
     // FOR EVERY PARSED OSC MESSAGE IN  inputBuffer THE receivedOscMessage callback WILL BE CALLED
-    // osc.parse( buffer name, size of the data, callback function)
-    osc.parse( inputBuffer, bufferSize, receivedOscMessage);
+    // osc.parseMessages( callback function, buffer name, size of the data, )
+    osc.parseMessages( receivedOscMessage, inputBuffer, packetLength);
+
+    // FLASH THE LED TO INDICATE WE RECEIVED A PACKET
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 
   }
 
@@ -89,10 +90,12 @@ void loop() {
 
     // STEP 1 : WRITE THE OSC MESSAGE INTO THE OUTPUT BUFFER outputBuffer
     int oscMessageSize = osc.writeMessage( outputBuffer , BUFFER_MAX_SIZE,  "/a0",  "i",   newAnalogRead0 );
+    slip.beginPacket();
     
     // STEP 2 : STREAM THE OSC MESSAGE THROUGH SLIP
-    slip.streamPacket(&Serial, outputBuffer, oscMessageSize);
+    slip.write(outputBuffer, oscMessageSize);
     
+    slip.endPacket();
   }
 
 

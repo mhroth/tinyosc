@@ -22,7 +22,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-
+#include "Print.h"
 
 /*
 #ifdef __cplusplus
@@ -32,16 +32,16 @@ extern "C" {
 
 typedef struct tosc_message {
   char *format;  // a pointer to the format field
-  char *marker;  // the current read head
-  char *buffer;  // the original message data (also points to the address)
-  uint32_t len;  // length of the buffer data
+  unsigned char *marker;  // the current read head
+  unsigned char *buffer;  // the original message data (also points to the address)
+  size_t len;  // length of the buffer data
 } tosc_message;
 
 typedef struct tosc_bundle {
-  char *marker; // the current write head (where the next message will be written)
-  char *buffer; // the original buffer
-  uint32_t bufLen; // the byte length of the original buffer
-  uint32_t bundleLen; // the byte length of the total bundle
+  unsigned char *marker; // the current write head (where the next message will be written)
+  unsigned char *buffer; // the original buffer
+  size_t bufLen; // the byte length of the original buffer
+  size_t bundleLen; // the byte length of the total bundle
 } tosc_bundle;
 
 
@@ -67,10 +67,10 @@ class TinyOsc
  * The contents of the buffer are NOT copied.
  * Calls the callback for every message received in a bundle or not.
  */
-void parse(char *buffer, const int len, tOscCallbackFunction callback );
+void parseMessages(tOscCallbackFunction callback , unsigned char *buffer, const size_t len);
 
  private:
-     	char *buffer;
+     	unsigned char *buffer;
      	//int len;
      	tosc_bundle bundle;
      	tosc_bundle* b;
@@ -83,14 +83,14 @@ void parse(char *buffer, const int len, tOscCallbackFunction callback );
 
 uint64_t parseBundleTimeTag();
 
-void parseBundle(char *buffer, const int len);
+void parseBundle(unsigned char  *buffer, const size_t len);
 
  /**
  * Parse a buffer containing an OSC message.
  * The contents of the buffer are NOT copied.
  * Returns 0 if there is no error. An error code (a negative number) otherwise.
  */
-int parseMessage(char *buffer, const int len);
+int parseMessage(unsigned char  *buffer, const size_t len);
 
 /**
  * Resets the read head to the first element.
@@ -103,7 +103,7 @@ void reset();
 /**
  * Returns true if the message is a bundle. False otherwise.
  */
-bool isABundle(const char *buffer);
+bool isABundle(const unsigned char  *buffer);
 
 
 /**
@@ -116,25 +116,7 @@ bool getNextMessage();
 
 public:
 
-/**
- * Returns true if the message was part of a bundle. False otherwise.
- */
-bool isBundled();
 
-
-// TIMETAGS ARE NOT SUPPORTED YET
-/**
- * Returns the timetag of an OSC bundle.
- * If the received message is not part of a bundle, returns 0.
- */
-// uint64_t getBundleTimetag();
-
-
-/**
- * Returns a point to the address block of the OSC buffer.
- * This is also the start of the buffer.
- */
-char* getAddress();
 
 /**
  * Returns true if the address matches.
@@ -146,40 +128,18 @@ bool fullMatch(const char* address);
  */
 bool fullMatch(const char* address, const char * typetags);
 
-/**
- * Returns a pointer to the format block of the OSC buffer.
- */
-char* getTypeTags();
-
-/**
- * Returns the length in bytes of this message.
- */
-uint32_t getLength();
 
 /**
  * Returns the next 32-bit int. Does not check buffer bounds.
  */
 int32_t getNextInt32();
 
-/**
- * Returns the next 64-bit int. Does not check buffer bounds.
- */
-int64_t getNextInt64();
-
-/**
- * Returns the next 64-bit timetag. Does not check buffer bounds.
- */
-uint64_t getNextTimetag();
 
 /**
  * Returns the next 32-bit float. Does not check buffer bounds.
  */
 float getNextFloat();
 
-/**
- * Returns the next 64-bit float. Does not check buffer bounds.
- */
-double getNextDouble();
 
 /**
  * Returns the next string, or NULL if the buffer length is exceeded.
@@ -191,33 +151,7 @@ const char* getNextString();
  * The len pointer is set to the length of the blob.
  * Returns NULL and 0 if the OSC buffer bounds are exceeded.
  */
-void getNextBlob(const char **buffer, int *len);
-
-/**
- * Returns the next set of midi bytes. Does not check bounds.
- * Bytes from MSB to LSB are: port id, status byte, data1, data2.
- */
-unsigned char* getNextMidi();
-
-
-
-// BUNDLE SENDING IS NOT SUPPORTED AS TIMESTAMP ARE NOT YET SUPPORTED
-
-/**
- * Starts writing a bundle to the given buffer with length.
- */
-/*void writeBundle(tosc_bundle *newBundle, uint64_t timetag, char *buffer, const int len);*/
-
-/**
- * Write a message to a bundle buffer. Returns the number of bytes written.
- */
-/*uint32_t addMessageToBundle(tosc_bundle *newBundle,
-    const char *address, const char *format, ...);
-*/
-/**
- * Returns the length in bytes of the created bundle.
- */
-/*uint32_t getBundleLength(tosc_bundle *newBundlenewBundle);*/
+void getNextBlob(const unsigned char  **buffer, size_t *len);
 
 
 
@@ -225,26 +159,26 @@ unsigned char* getNextMidi();
  * Writes an OSC packet to a buffer. Returns the total number of bytes written.
  * The entire buffer is cleared before writing.
  */
-uint32_t writeMessage(char *buffer, const int len, const char *address,
+
+size_t writeMessage(unsigned char *buffer, const size_t len, const char *address,
     const char *fmt, ...);
 
 
 };
 
 
-
 /**
- * A convenience function to (non-destructively) print a buffer containing
- * an OSC message to stdout.
+ * Writes an OSC packet to a buffer. Returns the total number of bytes written.
+ * The entire buffer is cleared before writing.
  */
-//void tosc_printOscBuffer(char *buffer, const int len);
+/*
+size_t  writeMessage(Print *output, const char *address,
+    const char *fmt, ...);
 
-/**
- * A convenience function to (non-destructively) print a pre-parsed OSC message
- * to stdout.
- */
-//void tosc_printMessage(tosc_message *o);
 
+};
+
+*/
 
 
 

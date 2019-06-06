@@ -22,8 +22,8 @@
 #define TINYOSC_TIMETAG_IMMEDIATELY 1L
 
 
-#if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
+
 #ifndef UTIL_H
 #define UTIL_H
 
@@ -52,35 +52,35 @@
         (((uint64_t)__low) << 32) | __high; \
     }))
 */
-#endif
+#endif // UTIL_H
 
-#define tosc_strncpy(_dst, _src, _len) strncpy(_dst, _src, _len)
+#define tosc_strncpy(_dst, _src, _len) strncpy((char *)_dst, _src, _len)
 
-#else
-#if _WIN32
-#include <winsock2.h>
-#define tosc_strncpy(_dst, _src, _len) strncpy_s(_dst, _len, _src, _TRUNCATE)
-#else
-#include <netinet/in.h>
-#define tosc_strncpy(_dst, _src, _len) strncpy(_dst, _src, _len)
-#endif
-#if __unix__ && !__APPLE__
-#include <endian.h>
-#define htonll(x) htobe64(x)
-#define ntohll(x) be64toh(x)
-#endif
-#endif
 
 #include "TinyOsc.h"
-
+/*
 #define BUNDLE_ID 0x2362756E646C6500L // "#bundle"
+*/
 
 
+
+
+/*
+size_t TinyOsc::writeMessage(Print* output,
+    const char *address, const char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  const uint32_t i = tosc_vwrite(buffer, len, address, format, ap);
+  va_end(ap);
+  return i; // return the total number of bytes written
+}
+*/
 // always writes a multiple of 4 bytes
-static uint32_t tosc_vwrite(char *buffer, const int len,
+
+static size_t tosc_vwrite(unsigned char *buffer, const size_t len,
     const char *address, const char *format, va_list ap) {
   memset(buffer, 0, len); // clear the buffer
-  uint32_t i = (uint32_t) strlen(address);
+  size_t i = (size_t) strlen(address);
   if (address == NULL || i >= len) return -1;
   tosc_strncpy(buffer, address, len);
   i = (i + 4) & ~0x3;
@@ -93,7 +93,7 @@ static uint32_t tosc_vwrite(char *buffer, const int len,
   for (int j = 0; format[j] != '\0'; ++j) {
     switch (format[j]) {
       case 'b': {
-        const uint32_t n = (uint32_t) va_arg(ap, int); // length of blob
+        const size_t n = (size_t) va_arg(ap, int); // length of blob
         if (i + 4 + n > len) return -3;
         char *b = (char *) va_arg(ap, void *); // pointer to binary data
         *((uint32_t *) (buffer+i)) = htonl(n); i += 4;
@@ -108,13 +108,6 @@ static uint32_t tosc_vwrite(char *buffer, const int len,
         i += 4;
         break;
       }
-      case 'd': {
-        if (i + 8 > len) return -3;
-        const double f = (double) va_arg(ap, double);
-        *((uint64_t *) (buffer+i)) = htonll(*((uint64_t *) &f));
-        i += 8;
-        break;
-      }
       case 'i': {
         if (i + 4 > len) return -3;
         const uint32_t k = (uint32_t) va_arg(ap, int);
@@ -122,21 +115,7 @@ static uint32_t tosc_vwrite(char *buffer, const int len,
         i += 4;
         break;
       }
-      case 'm': {
-        if (i + 4 > len) return -3;
-        const unsigned char *const k = (unsigned char *) va_arg(ap, void *);
-        memcpy(buffer+i, k, 4);
-        i += 4;
-        break;
-      }
-      case 't':
-      case 'h': {
-        if (i + 8 > len) return -3;
-        const uint64_t k = (uint64_t) va_arg(ap, long long);
-        *((uint64_t *) (buffer+i)) = htonll(k);
-        i += 8;
-        break;
-      }
+
       case 's': {
         const char *str = (const char *) va_arg(ap, void *);
         s_len = (int) strlen(str);
@@ -157,6 +136,14 @@ static uint32_t tosc_vwrite(char *buffer, const int len,
   return i; // return the total number of bytes written
 }
 
+size_t TinyOsc::writeMessage(unsigned char *buffer, const size_t len,
+    const char *address, const char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  const uint32_t i = tosc_vwrite(buffer, len, address, format, ap);
+  va_end(ap);
+  return i; // return the total number of bytes written
+}
 
 
 
@@ -170,7 +157,7 @@ TinyOsc::TinyOsc(){
 
 
 // http://opensoundcontrol.org/spec-1_0
-void TinyOsc::parse(char *buffer, const int len, tOscCallbackFunction callback) {
+void TinyOsc::parseMessages(tOscCallbackFunction callback, unsigned char *buffer, const size_t len) {
  
   if ( callback == NULL ) return; 
 
@@ -192,14 +179,14 @@ void TinyOsc::parse(char *buffer, const int len, tOscCallbackFunction callback) 
   
 }
 
-int TinyOsc::parseMessage(char *buffer, const int len) {
+int TinyOsc::parseMessage(unsigned char  *buffer, const size_t len) {
   // NOTE(mhroth): if there's a comma in the address, that's weird
-  int i = 0;
+  size_t i = 0;
   while (buffer[i] != '\0') ++i; // find the null-terimated address
   while (buffer[i] != ',') ++i; // find the comma which starts the format string
   if (i >= len) return -1; // error while looking for format string
   // format string is null terminated
-  o->format = buffer + i + 1; // format starts after comma
+  o->format = (char*)(buffer + i + 1); // format starts after comma
 
   while (i < len && buffer[i] != '\0') ++i;
   if (i == len) return -2; // format string not null terminated
@@ -219,15 +206,12 @@ uint64_t TinyOsc::parseBundleTimeTag() {
 }
 
 // check if first eight bytes are '#bundle '
-bool TinyOsc::isABundle(const char *buffer) {
-  return (strcmp( buffer, "#bundle") == 0); //return ((*(const int64_t *) buffer) == htonll(BUNDLE_ID));
+bool TinyOsc::isABundle(const unsigned char  *buffer) {
+  return (strcmp( (const char*)buffer, "#bundle") == 0); //return ((*(const int64_t *) buffer) == htonll(BUNDLE_ID));
 }
 
-bool TinyOsc::isBundled() {
-  return isPartOfABundle;
-}
 
-void TinyOsc::parseBundle(char *buffer, const int len) {
+void TinyOsc::parseBundle(unsigned char  *buffer, const size_t len) {
   b->buffer = (char *) buffer;
   b->marker = buffer + 16; // move past '#bundle ' and timetag fields
   b->bufLen = len;
@@ -240,22 +224,10 @@ void TinyOsc::parseBundle(char *buffer, const int len) {
 
 bool TinyOsc::getNextMessage() {
   if ((b->marker - b->buffer) >= b->bundleLen) return false;
-  uint32_t len = (uint32_t) ntohl(*((int32_t *) b->marker));
+  size_t len = (size_t) ntohl(*((size_t *) b->marker));
   parseMessage(b->marker+4, len);
   b->marker += (4 + len); // move marker to next bundle element
   return true;
-}
-
-char* TinyOsc::getAddress() {
-  return o->buffer;
-}
-
-char* TinyOsc::getTypeTags() {
-  return o->format;
-}
-
-uint32_t TinyOsc::getLength() {
-  return o->len;
 }
 
 int32_t TinyOsc::getNextInt32() {
@@ -265,15 +237,6 @@ int32_t TinyOsc::getNextInt32() {
   return i;
 }
 
-int64_t TinyOsc::getNextInt64() {
-  const int64_t i = (int64_t) ntohll(*((uint64_t *) o->marker));
-  o->marker += 8;
-  return i;
-}
-
-uint64_t TinyOsc::getNextTimetag() {
-  return (uint64_t) getNextInt64();
-}
 
 float TinyOsc::getNextFloat() {
   // convert from big-endian (network btye order)
@@ -282,11 +245,6 @@ float TinyOsc::getNextFloat() {
   return *((float *) (&i));
 }
 
-double TinyOsc::getNextDouble() {
-  const uint64_t i = ntohll(*((uint64_t *) o->marker));
-  o->marker += 8;
-  return *((double *) (&i));
-}
 
 const char *TinyOsc::getNextString() {
   int i = (int) strlen(o->marker);
@@ -297,7 +255,7 @@ const char *TinyOsc::getNextString() {
   return s;
 }
 
-void TinyOsc::getNextBlob( const char **buffer, int *len) {
+void TinyOsc::getNextBlob( const unsigned char  **buffer, size_t *len) {
   int i = (int) ntohl(*((uint32_t *) o->marker)); // get the blob length
   if (o->marker + 4 + i <= o->buffer + o->len) {
     *len = i; // length of blob
@@ -310,11 +268,7 @@ void TinyOsc::getNextBlob( const char **buffer, int *len) {
   }
 }
 
-unsigned char *TinyOsc::getNextMidi() {
-  unsigned char *m = (unsigned char *) o->marker;
-  o->marker += 4;
-  return m;
-}
+
 
 void TinyOsc::reset() {
   int i = 0;
@@ -328,70 +282,12 @@ void TinyOsc::reset() {
 
 bool TinyOsc::fullMatch(const char* address) {
 
-    return (strcmp( o->buffer, address) == 0);
+    return (strcmp( (const char *) o->buffer, address) == 0);
 }
 
 bool TinyOsc::fullMatch(const char* address, const char * typetags){
    return (strcmp( o->buffer, address) == 0) && (strcmp( o->format, typetags) == 0) ;
 }
-
-uint32_t TinyOsc::writeMessage(char *buffer, const int len,
-    const char *address, const char *format, ...) {
-  va_list ap;
-  va_start(ap, format);
-  const uint32_t i = tosc_vwrite(buffer, len, address, format, ap);
-  va_end(ap);
-  return i; // return the total number of bytes written
-}
-
-/*
-uint64_t TinyOsc::getBundleTimetag() {
-  return timetag;
-}
-*/
-
-/*
-
-void TinyOsc::startBundle(tosc_bundle *b, uint64_t timetag, char *buffer, const int len) {
-
-  //*((uint64_t *) buffer) = htonll(BUNDLE_ID);
-   //static uint8_t header[] = {'#', 'b', 'u', 'n', 'd', 'l', 'e', 0};
-   buffer[0] = '#';
-   buffer[1] = 'b';
-   buffer[2] = 'u';
-   buffer[3] = 'n';
-   buffer[4] = 'd';
-   buffer[5] = 'l';
-   buffer[6] = 'e';
-   buffer[7] = 0;
-
-  *((uint64_t *) (buffer + 8)) = htonll(timetag);
-
-  b->buffer = buffer;
-  b->marker = buffer + 16;
-  b->bufLen = len;
-  b->bundleLen = 16;
-}
-
-uint32_t TinyOsc::addMessageToBundle(tosc_bundle *b,
-    const char *address, const char *format, ...) {
-  va_list ap;
-  va_start(ap, format);
-  if (b->bundleLen >= b->bufLen) return 0;
-  const uint32_t i = tosc_vwrite( b->marker+4, b->bufLen-b->bundleLen-4, address, format, ap);
-  va_end(ap);
-  *((uint32_t *) b->marker) = htonl(i); // write the length of the message
-  b->marker += (4 + i);
-  b->bundleLen += (4 + i);
-  return i;
-}
-
-uint32_t TinyOsc::getBundleLength(tosc_bundle *newBundle) {
-  return newBundle->bundleLen;
-}
-
-*/
-
 
 
 

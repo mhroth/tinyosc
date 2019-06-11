@@ -1,14 +1,14 @@
 #include <TinySlip.h>
 #include <TinyOsc.h>
 
-#ifndef TINY_SLIP_OSC_BUFFER_SIZE
-#define TINY_SLIP_OSC_BUFFER_SIZE 256
+#ifndef TINY_OSC_SLIP_BUFFER_SIZE
+#define TINY_OSC_SLIP_BUFFER_SIZE 256
 #endif
 
 class TinyOscSlip : public TinyOsc {
 
     TinySlip stream;
-    unsigned char inputBuffer[TINY_SLIP_OSC_BUFFER_SIZE];
+    unsigned char inputBuffer[TINY_OSC_SLIP_BUFFER_SIZE];
 
   public:
     TinyOscSlip(Stream * stream) : stream(stream) {
@@ -17,9 +17,9 @@ class TinyOscSlip : public TinyOsc {
 
     void receiveMessages(tOscCallbackFunction callback) {
 
-      size_t packetLength = stream.parsePacket(inputBuffer, TINY_SLIP_OSC_BUFFER_SIZE );
+      size_t packetLength = stream.parsePacket(inputBuffer, TINY_OSC_SLIP_BUFFER_SIZE );
       if ( packetLength > 0 ) {
-        TinyOsc::parseMessages( callback , inputBuffer , TINY_SLIP_OSC_BUFFER_SIZE );
+        TinyOsc::parseMessages( callback , inputBuffer , TINY_OSC_SLIP_BUFFER_SIZE );
       }
 
     }

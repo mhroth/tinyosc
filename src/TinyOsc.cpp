@@ -162,7 +162,8 @@ size_t TinyOsc::writeMessage(unsigned char *buffer, const size_t len, const char
 */
 // always writes a multiple of 4 bytes
 
-static size_t tosc_vprint(Print* output, const char *address, const char *format, va_list ap) {
+
+size_t TinyOsc::vprint(Print* output, const char *address, const char *format, va_list ap) {
   
   uint8_t nullChar = '\0';
 
@@ -206,7 +207,7 @@ static size_t tosc_vprint(Print* output, const char *address, const char *format
         unsigned char *b = (unsigned char *) va_arg(ap, void *); // pointer to binary data
         output->write(b, n);
 
-        i += (1 + n);
+        i += (4 + n);
         // pad the size
         while ( (i % 4 ) ) {
             output->write(nullChar);
@@ -262,7 +263,7 @@ static size_t tosc_vprint(Print* output, const char *address, const char *format
 void TinyOsc::writeMessage(Print* output, const char *address, const char *format, ...) {
   va_list ap;
   va_start(ap, format);
-  tosc_vprint(output, address, format, ap);
+  vprint(output, address, format, ap);
   va_end(ap);
 }
 

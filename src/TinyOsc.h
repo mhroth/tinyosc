@@ -113,6 +113,9 @@ bool isABundle(const unsigned char  *buffer);
  */
 bool getNextMessage();
 
+protected :
+
+size_t vprint(Print* output, const char *address, const char *format, va_list ap);
 
 
 public:

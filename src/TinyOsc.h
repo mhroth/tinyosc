@@ -2,6 +2,7 @@
  * By Thomas O Fredericks (tof@tofstuff.com) 
  * Base on TinyOsc by :
  * Copyright (c) 2015-2018, Martin Roth (mhroth@gmail.com)
+ * https://github.com/mhroth/tinyosc
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -112,6 +113,9 @@ bool isABundle(const unsigned char  *buffer);
  */
 bool getNextMessage();
 
+protected :
+
+size_t vprint(Print* output, const char *address, const char *format, va_list ap);
 
 
 public:
@@ -159,26 +163,24 @@ void getNextBlob(const unsigned char  **buffer, size_t *len);
  * Writes an OSC packet to a buffer. Returns the total number of bytes written.
  * The entire buffer is cleared before writing.
  */
-
+/*
 size_t writeMessage(unsigned char *buffer, const size_t len, const char *address,
     const char *fmt, ...);
 
 
 };
 
-
+*/
 /**
  * Writes an OSC packet to a buffer. Returns the total number of bytes written.
  * The entire buffer is cleared before writing.
  */
-/*
-size_t  writeMessage(Print *output, const char *address,
-    const char *fmt, ...);
+void writeMessage(Print *output, const char *address, const char *fmt, ...);
 
 
 };
 
-*/
+
 
 
 

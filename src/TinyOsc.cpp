@@ -217,9 +217,11 @@ size_t TinyOsc::vprint(Print* output, const char *address, const char *format, v
         break;
       }
       case 'f': {
-        const float v = (float) va_arg(ap, double);
-        uint32_t v32 = tosc_bigEndian(v);
+        double  d = (double) va_arg(ap, double);//const float v = (float) va_arg(ap, double);
+        float v = d; // double might be 64 bytes
+        float v32 = tosc_bigEndian(v);
         uint8_t * ptr = (uint8_t *) &v32;
+        //uint8_t * ptr = (uint8_t *) &v;
         output->write(ptr, 4);
         i+=4;
         break;

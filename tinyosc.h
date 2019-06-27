@@ -19,6 +19,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdarg.h>
 
 #define TINYOSC_TIMETAG_IMMEDIATELY 1L
 
@@ -159,6 +160,12 @@ uint32_t tosc_getBundleLength(tosc_bundle *b);
  */
 uint32_t tosc_writeMessage(char *buffer, const int len, const char *address,
     const char *fmt, ...);
+
+/**
+ * Like tosc_writeMessage, but allows passing in a va_list directly.
+ */
+uint32_t tosc_vwrite(char *buffer, const int len,
+    const char *address, const char *format, va_list ap);
 
 /**
  * A convenience function to (non-destructively) print a buffer containing

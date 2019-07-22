@@ -370,9 +370,9 @@ float TinyOsc::getNextFloat() {
 
 
 const char *TinyOsc::getNextString() {
-  int i = (int) strlen(o->marker);
+  int i = (int) strlen((const char*)o->marker);
   if (o->marker + i >= o->buffer + o->len) return NULL;
-  const char *s = o->marker;
+  const char *s = (const char*)o->marker;
   i = (i + 4) & ~0x3; // advance to next multiple of 4 after trailing '\0'
   o->marker += i;
   return s;
@@ -397,7 +397,7 @@ void TinyOsc::reset() {
   int i = 0;
   while (o->format[i] != '\0') ++i;
   i = (i + 4) & ~0x3; // advance to the next multiple of 4 after trailing '\0'
-  o->marker = o->format + i - 1; // -1 to account for ',' format prefix
+  o->marker = ((unsigned char*)o->format) + i - 1; // -1 to account for ',' format prefix
 }
 
 
@@ -409,7 +409,7 @@ bool TinyOsc::fullMatch(const char* address) {
 }
 
 bool TinyOsc::fullMatch(const char* address, const char * typetags){
-   return (strcmp( o->buffer, address) == 0) && (strcmp( o->format, typetags) == 0) ;
+   return (strcmp( (const char*) o->buffer, address) == 0) && (strcmp( (const char*) o->format, typetags) == 0) ;
 }
 
 

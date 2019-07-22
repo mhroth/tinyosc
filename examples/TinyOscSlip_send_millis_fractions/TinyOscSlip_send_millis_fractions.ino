@@ -41,11 +41,22 @@ void loop() {
       messageOutputChrono.restart();
   
 
-    
     // STEP 2 : STREAM THE OSC MESSAGE THROUGH SLIP
-    osc.sendMessage( "/ms",  "i",   millis() );
-    
 
+    osc.sendMessage("/sizeoffloat", "i", sizeof(float));
+    osc.sendMessage("/sizeofdouble", "i", sizeof(double));
+    
+    osc.sendMessage( "/ms",  "i",   millis() );
+
+    osc.sendMessage( "/msf",  "f",   millis() * 1.0);
+
+    osc.sendMessage( "/msf10",  "f",   float(millis())*0.1 );
+
+    osc.sendMessage( "/ten",  "f",   10.0);
+    
+    osc.sendMessage( "/zero",  "f",   0.0);
+
+    osc.sendMessage( "/i",  "i",   10);
     
   }
 

@@ -19,7 +19,7 @@ class TinyOscSlip : public TinyOsc {
 
       size_t packetLength = stream.parsePacket(inputBuffer, TINY_OSC_SLIP_BUFFER_SIZE );
       if ( packetLength > 0 ) {
-        TinyOsc::parseMessages( callback , inputBuffer , TINY_OSC_SLIP_BUFFER_SIZE );
+        TinyOsc::parseMessages( callback , inputBuffer , packetLength );
       }
 
     }

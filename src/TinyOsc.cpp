@@ -272,8 +272,8 @@ void TinyOsc::writeMessage(Print* output, const char *address, const char *forma
 
 
 TinyOsc::TinyOsc(){
-  b = &bundle;
-  o= &message;
+  //b = &bundle;
+  //o = &message;
 
 }
 
@@ -292,12 +292,12 @@ void TinyOsc::parseMessages(tOscCallbackFunction callback, unsigned char *buffer
     isPartOfABundle = true;
     
     while ( getNextMessage()) {
-      callback();
+      callback(message);
     }
   } else {
     timetag = 0;
     isPartOfABundle = false;
-    if ( parseMessage(buffer,len) == 0 ) callback();
+    if ( parseMessage(buffer,len) == 0 ) callback(message);
   }
   
 }
@@ -309,23 +309,23 @@ int TinyOsc::parseMessage(unsigned char  *buffer, const size_t len) {
   while (buffer[i] != ',') ++i; // find the comma which starts the format string
   if (i >= len) return -1; // error while looking for format string
   // format string is null terminated
-  o->format = (char*)(buffer + i + 1); // format starts after comma
+  message.format = (char*)(buffer + i + 1); // format starts after comma
 
   while (i < len && buffer[i] != '\0') ++i;
   if (i == len) return -2; // format string not null terminated
 
   i = (i + 4) & ~0x3; // advance to the next multiple of 4 after trailing '\0'
-  o->marker = buffer + i;
+  message.marker = buffer + i;
 
-  o->buffer = buffer;
-  o->len = len;
+  message.buffer = buffer;
+  message.len = len;
 
   return 0;
 }
 
 
 uint64_t TinyOsc::parseBundleTimeTag() {
-  return ntohll(*((uint64_t *) (b->buffer+8)));
+  return ntohll(*((uint64_t *) (bundle.buffer+8)));
 }
 
 // check if first eight bytes are '#bundle '
@@ -335,10 +335,10 @@ bool TinyOsc::isABundle(const unsigned char  *buffer) {
 
 
 void TinyOsc::parseBundle(unsigned char  *buffer, const size_t len) {
-  b->buffer =  buffer;
-  b->marker = buffer + 16; // move past '#bundle ' and timetag fields
-  b->bufLen = len;
-  b->bundleLen = len;
+  bundle.buffer =  buffer;
+  bundle.marker = buffer + 16; // move past '#bundle ' and timetag fields
+  bundle.bufLen = len;
+  bundle.bundleLen = len;
 }
 
 
@@ -346,72 +346,77 @@ void TinyOsc::parseBundle(unsigned char  *buffer, const size_t len) {
 
 
 bool TinyOsc::getNextMessage() {
-  if ((b->marker - b->buffer) >= b->bundleLen) return false;
-  size_t len = (size_t) ntohl(*((size_t *) b->marker));
-  parseMessage(b->marker+4, len);
-  b->marker += (4 + len); // move marker to next bundle element
+  if ((bundle.marker - bundle.buffer) >= bundle.bundleLen) return false;
+  size_t len = (size_t) ntohl(*((size_t *) bundle.marker));
+  parseMessage(bundle.marker+4, len);
+  bundle.marker += (4 + len); // move marker to next bundle element
   return true;
 }
 
-int32_t TinyOsc::getNextInt32() {
+
+
+
+
+//    _______ _              ____           __  __                                
+//   |__   __(_)            / __ \         |  \/  |                               
+//      | |   _ _ __  _   _| |  | |___  ___| \  / | ___  ___ ___  __ _  __ _  ___ 
+//      | |  | | '_ \| | | | |  | / __|/ __| |\/| |/ _ \/ __/ __|/ _` |/ _` |/ _ \
+//      | |  | | | | | |_| | |__| \__ \ (__| |  | |  __/\__ \__ \ (_| | (_| |  __/
+//      |_|  |_|_| |_|\__, |\____/|___/\___|_|  |_|\___||___/___/\__,_|\__, |\___|
+//                     __/ |                                            __/ |     
+//                    |___/                                            |___/      
+
+TinyOscMessage::TinyOscMessage() {
+
+}
+
+int32_t TinyOscMessage::getNextInt32() {
   // convert from big-endian (network btye order)
-  const int32_t i = (int32_t) ntohl(*((uint32_t *) o->marker));
-  o->marker += 4;
+  const int32_t i = (int32_t) ntohl(*((uint32_t *) marker));
+  marker += 4;
   return i;
 }
 
 
-float TinyOsc::getNextFloat() {
+float TinyOscMessage::getNextFloat() {
   // convert from big-endian (network btye order)
-  const uint32_t i = ntohl(*((uint32_t *) o->marker));
-  o->marker += 4;
+  const uint32_t i = ntohl(*((uint32_t *) marker));
+  marker += 4;
   return *((float *) (&i));
 }
 
 
-const char *TinyOsc::getNextString() {
-  int i = (int) strlen((const char*)o->marker);
-  if (o->marker + i >= o->buffer + o->len) return NULL;
-  const char *s = (const char*)o->marker;
+const char* TinyOscMessage::getNextString() {
+  int i = (int) strlen((const char*)marker);
+  if (marker + i >= buffer + len) return NULL;
+  const char *s = (const char*)marker;
   i = (i + 4) & ~0x3; // advance to next multiple of 4 after trailing '\0'
-  o->marker += i;
+  marker += i;
   return s;
 }
 
-void TinyOsc::getNextBlob( const unsigned char  **buffer, size_t *len) {
-  int i = (int) ntohl(*((uint32_t *) o->marker)); // get the blob length
-  if (o->marker + 4 + i <= o->buffer + o->len) {
+
+
+bool TinyOscMessage::fullMatch(const char* address) {
+
+    return (strcmp( (const char *) buffer, address) == 0);
+}
+
+bool TinyOscMessage::fullMatch(const char* address, const char * typetags){
+   return (strcmp( (const char*) buffer, address) == 0) && (strcmp( (const char*) format, typetags) == 0) ;
+}
+
+/*
+void TinyOscMessage::getNextBlob( const unsigned char  **blob, size_t *len) {
+  int i = (int) ntohl(*((uint32_t *) message.marker)); // get the blob length
+  if (message.marker + 4 + i <= message.buffer + message.len) {
     *len = i; // length of blob
-    *buffer = o->marker + 4;
+    *blob = message.marker + 4;
     i = (i + 7) & ~0x3;
-    o->marker += i;
+    message.marker += i;
   } else {
     *len = 0;
-    *buffer = NULL;
+    *blob = NULL;
   }
 }
-
-
-
-void TinyOsc::reset() {
-  int i = 0;
-  while (o->format[i] != '\0') ++i;
-  i = (i + 4) & ~0x3; // advance to the next multiple of 4 after trailing '\0'
-  o->marker = ((unsigned char*)o->format) + i - 1; // -1 to account for ',' format prefix
-}
-
-
-
-
-bool TinyOsc::fullMatch(const char* address) {
-
-    return (strcmp( (const char *) o->buffer, address) == 0);
-}
-
-bool TinyOsc::fullMatch(const char* address, const char * typetags){
-   return (strcmp( (const char*) o->buffer, address) == 0) && (strcmp( (const char*) o->format, typetags) == 0) ;
-}
-
-
-
-
+*/

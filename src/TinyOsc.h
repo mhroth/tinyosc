@@ -31,12 +31,6 @@ extern "C" {
 #endif
 */
 
-typedef struct tosc_message {
-  char* format;  // a pointer to the format field
-  unsigned char* marker;  // the current read head
-  unsigned char* buffer;  // the original message data (also points to the address)
-  size_t len;  // length of the buffer data
-} tosc_message;
 
 typedef struct tosc_bundle {
   unsigned char* marker; // the current write head (where the next message will be written)
@@ -45,11 +39,64 @@ typedef struct tosc_bundle {
   size_t bundleLen; // the byte length of the total bundle
 } tosc_bundle;
 
+class TinyOscMessage {
+    
+
+
+
+	public:
+
+	char* format;  // a pointer to the format field
+	unsigned char* marker;  // the current read head
+	unsigned char* buffer;  // the original message data (also points to the address)
+	size_t len;  // length of the buffer data
+
+
+
+	TinyOscMessage();
+
+	/**
+	 * Returns true if the address matches.
+	 */
+	bool fullMatch(const char* address);
+
+	/**
+	 * Returns true if the address and type tag matches.
+	 */
+	bool fullMatch(const char* address, const char * typetags);
+
+
+	/**
+	 * Returns the next 32-bit int. Does not check buffer bounds.
+	 */
+	int32_t getNextInt32();
+
+
+	/**
+	 * Returns the next 32-bit float. Does not check buffer bounds.
+	 */
+	float getNextFloat();
+
+
+	/**
+	 * Returns the next string, or NULL if the buffer length is exceeded.
+	 */
+	const char* getNextString();
+
+	/**
+	 * Points the given buffer pointer to the next blob.
+	 * The len pointer is set to the length of the blob.
+	 * Returns NULL and 0 if the OSC buffer bounds are exceeded.
+	 */
+	//void getNextBlob(const unsigned char  **buffer, size_t *len);
+
+};
+
 
 class TinyOsc
 {
 	 public:
-	 	typedef void (*tOscCallbackFunction)(void);
+	 	typedef void (*tOscCallbackFunction)(TinyOscMessage&);
 
 /*!
     @brief  Create an instance of the TinyOsc class.
@@ -74,9 +121,9 @@ void parseMessages(tOscCallbackFunction callback , unsigned char *buffer, const 
      	unsigned char *buffer;
      	//int len;
      	tosc_bundle bundle;
-     	tosc_bundle* b;
-     	tosc_message* o;
-     	tosc_message message;
+     	//tosc_bundle* b;
+     	//tosc_message* o;
+     	TinyOscMessage message;
      	tOscCallbackFunction callback;
      	uint64_t timetag;
      	bool isPartOfABundle;
@@ -93,12 +140,6 @@ void parseBundle(unsigned char  *buffer, const size_t len);
  */
 int parseMessage(unsigned char  *buffer, const size_t len);
 
-/**
- * Resets the read head to the first element.
- *
- * @return  The same tosc_message pointer.
- */
-void reset();
 
 
 /**
@@ -118,44 +159,7 @@ protected :
 size_t vprint(Print* output, const char *address, const char *format, va_list ap);
 
 
-public:
 
-
-
-/**
- * Returns true if the address matches.
- */
-bool fullMatch(const char* address);
-
-/**
- * Returns true if the address and type tag matches.
- */
-bool fullMatch(const char* address, const char * typetags);
-
-
-/**
- * Returns the next 32-bit int. Does not check buffer bounds.
- */
-int32_t getNextInt32();
-
-
-/**
- * Returns the next 32-bit float. Does not check buffer bounds.
- */
-float getNextFloat();
-
-
-/**
- * Returns the next string, or NULL if the buffer length is exceeded.
- */
-const char* getNextString();
-
-/**
- * Points the given buffer pointer to the next blob.
- * The len pointer is set to the length of the blob.
- * Returns NULL and 0 if the OSC buffer bounds are exceeded.
- */
-void getNextBlob(const unsigned char  **buffer, size_t *len);
 
 
 

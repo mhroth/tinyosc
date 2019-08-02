@@ -4,13 +4,13 @@
 		"appversion" : 		{
 			"major" : 8,
 			"minor" : 0,
-			"revision" : 5,
+			"revision" : 6,
 			"architecture" : "x64",
 			"modernui" : 1
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 457.0, 123.0, 1017.0, 687.0 ],
+		"rect" : [ 217.0, 169.0, 1017.0, 687.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -50,7 +50,7 @@
 						"appversion" : 						{
 							"major" : 8,
 							"minor" : 0,
-							"revision" : 5,
+							"revision" : 6,
 							"architecture" : "x64",
 							"modernui" : 1
 						}
@@ -111,13 +111,13 @@
 						"appversion" : 						{
 							"major" : 8,
 							"minor" : 0,
-							"revision" : 5,
+							"revision" : 6,
 							"architecture" : "x64",
 							"modernui" : 1
 						}
 ,
 						"classnamespace" : "box",
-						"rect" : [ 457.0, 149.0, 1017.0, 661.0 ],
+						"rect" : [ 217.0, 195.0, 1017.0, 661.0 ],
 						"bglocked" : 0,
 						"openinpresentation" : 0,
 						"default_fontsize" : 12.0,
@@ -147,23 +147,75 @@
 						"showontab" : 1,
 						"boxes" : [ 							{
 								"box" : 								{
+									"id" : "obj-7",
+									"int" : 1,
+									"maxclass" : "gswitch2",
+									"numinlets" : 2,
+									"numoutlets" : 2,
+									"outlettype" : [ "", "" ],
+									"parameter_enable" : 0,
+									"patching_rect" : [ 20.0, 411.0, 39.0, 32.0 ]
+								}
+
+							}
+, 							{
+								"box" : 								{
+									"id" : "obj-2",
+									"maxclass" : "newobj",
+									"numinlets" : 1,
+									"numoutlets" : 1,
+									"outlettype" : [ "int" ],
+									"patching_rect" : [ 1.0, 383.0, 40.0, 22.0 ],
+									"text" : "active"
+								}
+
+							}
+, 							{
+								"box" : 								{
+									"fontface" : 1,
+									"fontsize" : 16.0,
+									"id" : "obj-6",
+									"linecount" : 2,
+									"maxclass" : "comment",
+									"numinlets" : 1,
+									"numoutlets" : 0,
+									"patching_rect" : [ 372.0, 306.0, 179.0, 43.0 ],
+									"text" : "Don't forget to set the proper baud and port.",
+									"textcolor" : [ 0.792156862745098, 0.0, 0.0, 1.0 ]
+								}
+
+							}
+, 							{
+								"box" : 								{
+									"id" : "obj-5",
+									"maxclass" : "number",
+									"numinlets" : 1,
+									"numoutlets" : 2,
+									"outlettype" : [ "", "bang" ],
+									"parameter_enable" : 0,
+									"patching_rect" : [ 127.0, 553.0, 149.0, 22.0 ]
+								}
+
+							}
+, 							{
+								"box" : 								{
+									"id" : "obj-3",
+									"maxclass" : "newobj",
+									"numinlets" : 1,
+									"numoutlets" : 0,
+									"patching_rect" : [ 40.0, 459.0, 91.0, 22.0 ],
+									"text" : "print @popup 1"
+								}
+
+							}
+, 							{
+								"box" : 								{
 									"id" : "obj-29",
 									"maxclass" : "comment",
 									"numinlets" : 1,
 									"numoutlets" : 0,
 									"patching_rect" : [ 228.0, 379.0, 266.0, 20.0 ],
 									"text" : "Convert SLIP to OSC then Max messages."
-								}
-
-							}
-, 							{
-								"box" : 								{
-									"id" : "obj-28",
-									"maxclass" : "comment",
-									"numinlets" : 1,
-									"numoutlets" : 0,
-									"patching_rect" : [ 343.0, 218.0, 266.0, 20.0 ],
-									"text" : "Convert Max messages to OSC then to SLIP."
 								}
 
 							}
@@ -179,7 +231,7 @@
 										"appversion" : 										{
 											"major" : 8,
 											"minor" : 0,
-											"revision" : 5,
+											"revision" : 6,
 											"architecture" : "x64",
 											"modernui" : 1
 										}
@@ -372,7 +424,7 @@
  ]
 									}
 ,
-									"patching_rect" : [ 240.0, 214.0, 92.0, 22.0 ],
+									"patching_rect" : [ 127.0, 247.0, 265.0, 22.0 ],
 									"saved_object_attributes" : 									{
 										"description" : "",
 										"digest" : "",
@@ -380,7 +432,7 @@
 										"tags" : ""
 									}
 ,
-									"text" : "p max>osc>slip"
+									"text" : "p \"Convert Max messages to OSC then to SLIP\""
 								}
 
 							}
@@ -396,13 +448,13 @@
 										"appversion" : 										{
 											"major" : 8,
 											"minor" : 0,
-											"revision" : 5,
+											"revision" : 6,
 											"architecture" : "x64",
 											"modernui" : 1
 										}
 ,
 										"classnamespace" : "box",
-										"rect" : [ 0.0, 0.0, 640.0, 480.0 ],
+										"rect" : [ 59.0, 107.0, 640.0, 480.0 ],
 										"bglocked" : 0,
 										"openinpresentation" : 0,
 										"default_fontsize" : 12.0,
@@ -524,20 +576,8 @@
 									"numinlets" : 2,
 									"numoutlets" : 2,
 									"outlettype" : [ "", "" ],
-									"patching_rect" : [ 174.0, 481.0, 59.0, 22.0 ],
-									"text" : "route /fps"
-								}
-
-							}
-, 							{
-								"box" : 								{
-									"id" : "obj-6",
-									"maxclass" : "message",
-									"numinlets" : 2,
-									"numoutlets" : 1,
-									"outlettype" : [ "" ],
-									"patching_rect" : [ 104.0, 516.0, 89.0, 22.0 ],
-									"text" : "25280"
+									"patching_rect" : [ 127.0, 510.0, 59.0, 22.0 ],
+									"text" : "route /ms"
 								}
 
 							}
@@ -600,7 +640,7 @@
 									"numinlets" : 2,
 									"numoutlets" : 1,
 									"outlettype" : [ "" ],
-									"patching_rect" : [ 240.0, 163.0, 58.0, 22.0 ],
+									"patching_rect" : [ 127.0, 196.0, 58.0, 22.0 ],
 									"text" : "/ms 1000"
 								}
 
@@ -614,34 +654,8 @@
 									"maxclass" : "comment",
 									"numinlets" : 1,
 									"numoutlets" : 0,
-									"patching_rect" : [ 25.0, 26.0, 732.0, 60.0 ],
+									"patching_rect" : [ 25.0, 26.0, 732.0, 62.0 ],
 									"text" : "This patcher uses CNMAT's slipOSC and OpenSoundControl. Please install the CNMAT from Max's Package Manager."
-								}
-
-							}
-, 							{
-								"box" : 								{
-									"id" : "obj-8",
-									"maxclass" : "newobj",
-									"numinlets" : 1,
-									"numoutlets" : 1,
-									"outlettype" : [ "bang" ],
-									"patching_rect" : [ 53.0, 214.0, 61.0, 22.0 ],
-									"style" : "default",
-									"text" : "loadbang"
-								}
-
-							}
-, 							{
-								"box" : 								{
-									"id" : "obj-9",
-									"maxclass" : "message",
-									"numinlets" : 2,
-									"numoutlets" : 1,
-									"outlettype" : [ "" ],
-									"patching_rect" : [ 53.0, 249.0, 73.0, 22.0 ],
-									"style" : "default",
-									"text" : "chunk 1024"
 								}
 
 							}
@@ -665,7 +679,7 @@
 										"appversion" : 										{
 											"major" : 8,
 											"minor" : 0,
-											"revision" : 5,
+											"revision" : 6,
 											"architecture" : "x64",
 											"modernui" : 1
 										}
@@ -1173,7 +1187,7 @@
 												"box" : 												{
 													"allowdrag" : 0,
 													"id" : "obj-19",
-													"items" : [ "(serial", "port)", ",", "COM11" ],
+													"items" : [ "(serial", "port)", ",", "COM19" ],
 													"maxclass" : "umenu",
 													"numinlets" : 1,
 													"numoutlets" : 3,
@@ -1669,7 +1683,7 @@
  ],
 						"lines" : [ 							{
 								"patchline" : 								{
-									"destination" : [ "obj-6", 1 ],
+									"destination" : [ "obj-5", 0 ],
 									"source" : [ "obj-11", 0 ]
 								}
 
@@ -1697,6 +1711,13 @@
 							}
 , 							{
 								"patchline" : 								{
+									"destination" : [ "obj-7", 0 ],
+									"source" : [ "obj-2", 0 ]
+								}
+
+							}
+, 							{
+								"patchline" : 								{
 									"destination" : [ "obj-15", 0 ],
 									"source" : [ "obj-22", 0 ]
 								}
@@ -1705,6 +1726,15 @@
 , 							{
 								"patchline" : 								{
 									"destination" : [ "obj-11", 0 ],
+									"order" : 0,
+									"source" : [ "obj-23", 0 ]
+								}
+
+							}
+, 							{
+								"patchline" : 								{
+									"destination" : [ "obj-7", 1 ],
+									"order" : 1,
 									"source" : [ "obj-23", 0 ]
 								}
 
@@ -1725,15 +1755,8 @@
 							}
 , 							{
 								"patchline" : 								{
-									"destination" : [ "obj-9", 0 ],
-									"source" : [ "obj-8", 0 ]
-								}
-
-							}
-, 							{
-								"patchline" : 								{
-									"destination" : [ "obj-13", 0 ],
-									"source" : [ "obj-9", 0 ]
+									"destination" : [ "obj-3", 0 ],
+									"source" : [ "obj-7", 1 ]
 								}
 
 							}
@@ -1811,9 +1834,9 @@
 		"lines" : [  ],
 		"parameters" : 		{
 			"obj-1::obj-13::obj-71" : [ "live.text[1]", "live.text[1]", 0 ],
+			"obj-1::obj-13::obj-67" : [ "live.text", "live.text", 0 ],
 			"obj-1::obj-13::obj-65" : [ "live.button[1]", "live.button", 0 ],
 			"obj-1::obj-13::obj-63" : [ "live.button", "live.button", 0 ],
-			"obj-1::obj-13::obj-67" : [ "live.text", "live.text", 0 ],
 			"parameterbanks" : 			{
 
 			}

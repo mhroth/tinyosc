@@ -9,10 +9,14 @@ class TinyOscUdp : public TinyOsc {
 
     UDP* udp;
     unsigned char inputBuffer[TINY_OSC_UDP_BUFFER_SIZE];
+    IPAddress destinationIp;
+    unsigned int destinationPort;
 
   public:
-    TinyOscUdp(UDP * udp) {
+    TinyOscUdp(UDP * udp, IPAddress destinationIp, unsigned int destinationPort) {
     	this->udp = udp;
+      this->destinationIp = destinationIp;
+      this->destinationPort = destinationPort;
     }
 
     void receiveMessages(tOscCallbackFunction callback) {
@@ -31,13 +35,18 @@ class TinyOscUdp : public TinyOsc {
 
     }
 
-    void sendMessage(IPAddress ip, unsigned int port, const char *address, const char *format, ...) {
-      udp->beginPacket(ip, port);
+    void sendMessage(const char *address, const char *format, ...) {
+      udp->beginPacket(destinationIp, destinationPort);
       va_list ap;
       va_start(ap, format);
       vprint(udp, address, format, ap);
       va_end(ap);
       udp->endPacket(); 
+    }
+
+    void setDestination(IPAddress destinationIp, unsigned int destinationPort) {
+      this->destinationIp = destinationIp;
+      this->destinationPort = destinationPort;
     }
 
 

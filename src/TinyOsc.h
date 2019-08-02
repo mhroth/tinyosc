@@ -32,15 +32,15 @@ extern "C" {
 */
 
 typedef struct tosc_message {
-  char *format;  // a pointer to the format field
-  unsigned char *marker;  // the current read head
-  unsigned char *buffer;  // the original message data (also points to the address)
+  char* format;  // a pointer to the format field
+  unsigned char* marker;  // the current read head
+  unsigned char* buffer;  // the original message data (also points to the address)
   size_t len;  // length of the buffer data
 } tosc_message;
 
 typedef struct tosc_bundle {
-  unsigned char *marker; // the current write head (where the next message will be written)
-  unsigned char *buffer; // the original buffer
+  unsigned char* marker; // the current write head (where the next message will be written)
+  unsigned char* buffer; // the original buffer
   size_t bufLen; // the byte length of the original buffer
   size_t bundleLen; // the byte length of the total bundle
 } tosc_bundle;

@@ -19,7 +19,13 @@ class TinyOscUdp : public TinyOsc {
 
       size_t packetLength = udp->parsePacket();
       if ( packetLength > 0 ) {
-      	packetLength = udp->read(inputBuffer, TINY_OSC_UDP_BUFFER_SIZE);
+        packetLength = udp->read(inputBuffer, TINY_OSC_UDP_BUFFER_SIZE);
+        #ifdef TINY_OSC_UDP_DEBUG
+        
+        Serial.print("Got UDP bytes: ");
+        Serial.println(packetLength);
+        #endif
+      	
         TinyOsc::parseMessages( callback , inputBuffer , packetLength);
       }
 

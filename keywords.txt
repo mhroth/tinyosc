@@ -1,0 +1,38 @@
+#######################################
+# Syntax Coloring Map For TinyOsc
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+
+TinyOsc	KEYWORD1
+TinyOscSlip	KEYWORD1
+TinyOscUdp	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+fullMatch	KEYWORD2
+getAddress	KEYWORD2
+getFormat	KEYWORD2
+parse	KEYWORD2
+writeMessage	KEYWORD2
+getNextInt32	KEYWORD2
+getNextInt64	KEYWORD2
+getNextTimetag	KEYWORD2
+getNextFloat	KEYWORD2
+getNextDouble	KEYWORD2
+getNextString	KEYWORD2
+getNextBlob	KEYWORD2
+getNextMidi	KEYWORD2
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+#######################################
+# Constants (LITERAL1)
+#######################################

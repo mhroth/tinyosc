@@ -1,14 +1,14 @@
 # TinyOSC
 
-TinyOSC is a minimal [Open Sound Control](http://opensoundcontrol.org/) (OSC) library written in C. The typical use case is to parse a raw buffer received directly from a socket. Given the limited nature of the library it also tends to be quite fast. It doesn't hold on to much state and it doesn't do much error checking. If you have a good idea of what OSC packets you will receive and need to process them quickly, this library might be for you.
+TinyOSC is a minimal [Open Sound Control](http://opensoundcontrol.org/) (OSC) library for Arduino based on TinyOsc by Martin Roth (https://github.com/mhroth/tinyosc). The typical use case is to parse a raw buffer received directly from a socket. Given the limited nature of the library it also tends to be quite fast. It doesn't hold on to much state and it doesn't do much error checking. If you have a good idea of what OSC packets you will receive and need to process them quickly, this library might be for you.
 
 ## Supported Features
 Due to its *tiny* nature, TinyOSC does not support all standard OSC features. Currently it supports:
 * message parsing
 * message writing
 * bundle parsing
-* bundle writing
-* timetag
+* ~~bundle writing~~
+* ~~timetags~~
 * ~~matching~~
 * Types
   * `b`: binary blob
@@ -24,99 +24,156 @@ Due to its *tiny* nature, TinyOSC does not support all standard OSC features. Cu
   * `I`: infinitum
   * `N`: nil
 
-## Code Example
-### Reading Messages
+
+
+## Code Examples
+
 ```C
-#include "tinyosc.h"
+// Create a TinyOsc instance
+TinyOsc osc;
+```
 
-tosc_message osc; // declare the TinyOSC structure
-char buffer[1024]; // declare a buffer into which to read the socket contents
-int len = 0; // the number of bytes read from the socket
+### Receiving UDP OSC Messages
 
-while ((len = READ_BYTES_FROM_SOCKET(buffer)) > 0) {
-  // parse the buffer contents (the raw OSC bytes)
-  // a return value of 0 indicates no error
-  if (!tosc_readMessage(&osc, buffer, len)) {
-    printf("Received OSC message: [%i bytes] %s %s ",
-        len, // the number of bytes in the OSC message
-        tosc_getAddress(&osc), // the OSC address string, e.g. "/button1"
-        tosc_getFormat(&osc)); // the OSC format string, e.g. "f"
-    for (int i = 0; osc.format[i] != '\0'; i++) {
-      switch (osc.format[i]) {
-        case 'f': printf("%g ", tosc_getNextFloat(&osc)); break;
-        case 'i': printf("%i ", tosc_getNextInt32(&osc)); break;
-        // returns NULL if the buffer length is exceeded
-        case 's': printf("%s ", tosc_getNextString(&osc)); break;
-        default: continue;
-      }
-    }
-    printf("\n");
+```C
+// Parsing an OSC message from a UDP buffer
+#define UDP_RX_BUFFER_MAX_SIZE 256
+char udpRxBuffer[UDP_RX_BUFFER_MAX_SIZE];
+
+[...setup UDP and WIFI or ETHERNET...]
+
+// FUNCTION THAT IS CALLED FOR EVERY RECEIVED MESSAGE
+void receivedOscMessage() {
+
+  // AN OSC MESSAGE IS RECEIVED
+  // PARSE THE MESSAGE HERE WITH 
+  // osc.fullMatch() TO CHECK THE ADDRESS
+  // osc.getNextInt32(), osc.getNextFloat(), osc.getNextString(), etc TO GET THE ARGUMENTS
+}
+
+void loop() {
+
+
+if ( udp.parsePacket() ) {
+    
+    // COPY THE PACKET INTO A BUFFER THAT WILL THEN BE USED BY TinyOsc
+    // udp.read() RETURNS THE NUMBER OF chars THAT WERE RECEIVED 
+    int packetSize = udp.read(udpRxBuffer, UDP_RECEIVE_BUFFER_MAX_SIZE);
+
+    // PARSE THE OSC MESSAGES FROM THE BUFFER
+    // osc.parse( buffer name, size of the data, callback function)
+    // FOR EVERY PARSED OSC MESSAGE IN udpRxBuffer THE receivedOscMessage WILL BE CALLED
+    osc.parse( udpRxBuffer, packetSize, receivedOscMessage);
+
   }
+}
+
+```
+
+### PARSING OSC MESSAGES
+
+```C
+/**
+ * Returns true if the address matches "/led".
+ */
+if (  osc.fullMatch("/led") ) {
+  // Get the first argument as an Arduino int
+  int argument = getNextInt32();
 }
 ```
 
-### Writing Messages
 ```C
-// declare a buffer for writing the OSC packet into
-char buffer[1024];
-
-// write the OSC packet to the buffer
-// returns the number of bytes written to the buffer, negative on error
-// note that tosc_write will clear the entire buffer before writing to it
-int len = tosc_writeMessage(
-    buffer, sizeof(buffer),
-    "/ping", // the address
-    "fsi",   // the format; 'f':32-bit float, 's':ascii string, 'i':32-bit integer
-    1.0f, "hello", 2);
-
-// send the data out of the socket
-send(socket_fd, buffer, len, 0);
-```
-
-### Reading Bundles
-Here is an example of the kind of message processing loop that you might have around a socket. The buffer should first be inspected to see if it contains a bundle or not, at which point messages are parsed independently along with an optional timetag.
-
-```C
-void receive(char *buffer, int len) {
-  // see if the buffer contains a bundle or an individual message
-  if (tosc_isBundle(buffer)) {
-    tosc_bundle bundle;
-    tosc_parseBundle(&bundle, buffer, len);
-    const uint64_t timetag = tosc_getTimetag(&bundle);
-    tosc_message osc;
-    while (tosc_getNextMessage(&bundle, &osc)) {
-      tosc_printMessage(&osc);
-    }
-  } else {
-    tosc_printOscBuffer(buffer, len);
-  }
+/**
+ * Returns true if the address matches "/led" and 
+ the type tag string matches "i" (one OSC integers)
+ */
+if (  osc.fullMatch("/led","i") ) {
+  // Get the first argument as a long (Arduino long == OSC int)
+  long argument = osc.getNextInt32();
 }
 ```
 
-### Writing Bundles
 ```C
-char buffer[1024];
-
-tosc_bundle bundle;
-tosc_writeBundle(&bundle, buffer, sizeof(buffer));
-tosc_writeNextMessage(&bundle, "/ping", "fsi", 1.0f, "hello", 3);
-tosc_writeNextMessage(&bundle, "/pong", "TTF");
-// etc.
-
-send(buffer, tosc_getBundleLength(&bundle));
+/**
+ * Returns true if the address matches "/motor" and 
+ the type tag string matches "ii" (two OSC integers)
+ */
+if (  osc.fullMatch("/motor","ii") ) {
+  int firstArgument  = osc.getNextInt32();
+  int secondArgument = osc.getNextInt32();
+}
 ```
 
-### main.c
-A small example program is included in `main.c`. Build it using the included shell script `build.sh`, and run it with `tinyosc`. The program simply opens a UDP socket on port 9000 and prints out received OSC messages. Press Ctrl+C to stop. Try it with any OSC client, such as TouchOSC. This program is also an example for how TinyOSC is expected to be used.
+```C
+/**
+ * Returns true if the address matches "/rgb" and 
+ the type tag string matches "iii" (three OSC integers)
+ */
+if (  osc.fullMatch("/rgb","iii") ) {
+  int r  = osc.getNextInt32();
+  int g = osc.getNextInt32();
+  int b = osc.getNextInt32();
+}
+```
 
-#### Sample Output
+```C
+/**
+ * Returns true if the address matches "/touch" and 
+ the type tag string matches "f" (one OSC float)
+ */
+if (  osc.fullMatch("/touch","f") ) {
+  int f  = osc.getNextFloat();
+}
 ```
-Starting write tests:
-[56 bytes] /address fsibTFNI 1 hello world -1 [8]001080F0011181F1 true false nil inf
-done.
-tinyosc is now listening on port 9000.
-Press Ctrl+C to stop.
+
+### Debuging OSC Messages
+```C
+/**
+ * Returns a pointer to the address block of the OSC buffer.
+ */
+char * address = osc.getAddress();
+Serial.println(address);
 ```
+```C
+/**
+ * Returns a pointer to the type tag block of the OSC buffer.
+ */
+char * typetags = osc.getTypeTags();
+Serial.println(typetags);
+```
+
+### Writing OSC Messages
+```C
+/**
+ * Writes an OSC packet to a buffer. Returns the total number of bytes written.
+ * The entire buffer is cleared before writing.
+ */
+uint32_t writeMessage(char *buffer, const int len, const char *address,
+    const char *fmt, ...);
+
+
+};
+```
+### Sending UDP OSC Messages
+```C
+#define TX_BUFFER_MAX_SIZE 256
+char txBuffer[TX_BUFFER_MAX_SIZE];
+```
+
+```C
+   // <TinyOsc>.writeMessage( name of buffer to write to , the maximum size of the buffer , the address , the format string , data... )
+    // THE TYPE TAG STRING MUST MATCH THE DATA
+    // 'f':32-bit float, 's':ascii string, 'i':32-bit integer
+    // IN THIS CASE, THE DATA IS 1.0 (float), "hello" (string) AND millis() (int)
+    int txBufferLength = osc.writeMessage( txBuffer, TX_BUFFER_MAX_SIZE ,  "/ping",  "fsi",   1.0, "hello", millis() );
+
+    // udpTxBuffer NOW CONTAINS THE OSC MESSAGE AND WE SEND IT OVER UDP
+    udp.beginPacket( targetIp , targetPort );
+    udp.write( txBuffer ,  txBufferLength );
+    udp.endPacket();
+```
+
+
 
 
 ## Tests
@@ -125,6 +182,7 @@ Meh. Not really. But it works with [TouchOSC](http://hexler.net/software/touchos
 ## License
 TinyOSC is published under the [ISC license](http://opensource.org/licenses/ISC). Please see the `LICENSE` file included in this repository, also reproduced below. In short, you are welcome to use this code for any purpose, including commercial and closed-source use.
 
+Original TinyOsc copyright:
 ```
 Copyright (c) 2015, Martin Roth <mhroth@gmail.com>
 

@@ -155,10 +155,10 @@ unsigned char *tosc_getNextMidi(tosc_message *o) {
 }
 
 tosc_message *tosc_reset(tosc_message *o) {
-  int i = 0;
-  while (o->format[i] != '\0') ++i;
+  int i = o->format - o->buffer;
+  while (o->buffer[i] != '\0') ++i;
   i = (i + 4) & ~0x3; // advance to the next multiple of 4 after trailing '\0'
-  o->marker = o->format + i - 1; // -1 to account for ',' format prefix
+  o->marker = o->buffer + i;
   return o;
 }
 

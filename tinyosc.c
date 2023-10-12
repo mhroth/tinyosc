@@ -25,7 +25,7 @@
 #include <netinet/in.h>
 #define tosc_strncpy(_dst, _src, _len) strncpy(_dst, _src, _len)
 #endif
-#if __unix__ && !__APPLE__
+#if (__unix__ && !__APPLE__) || (ESP_PLATFORM)
 #include <endian.h>
 #define htonll(x) htobe64(x)
 #define ntohll(x) be64toh(x)
@@ -98,13 +98,13 @@ uint32_t tosc_getLength(tosc_message *o) {
 
 int32_t tosc_getNextInt32(tosc_message *o) {
   // convert from big-endian (network btye order)
-  const int32_t i = (int32_t) ntohl(*((uint32_t *) o->marker));
+  const int32_t i = (int32_t) ntohl(*((const uint32_t *) o->marker));
   o->marker += 4;
   return i;
 }
 
 int64_t tosc_getNextInt64(tosc_message *o) {
-  const int64_t i = (int64_t) ntohll(*((uint64_t *) o->marker));
+  const int64_t i = (int64_t) ntohll(*((const uint64_t *) o->marker));
   o->marker += 8;
   return i;
 }
@@ -115,15 +115,15 @@ uint64_t tosc_getNextTimetag(tosc_message *o) {
 
 float tosc_getNextFloat(tosc_message *o) {
   // convert from big-endian (network btye order)
-  const uint32_t i = ntohl(*((uint32_t *) o->marker));
+  const uint32_t i = ntohl(*((const uint32_t *) o->marker));
   o->marker += 4;
-  return *((float *) (&i));
+  return *((const float *) (&i));
 }
 
 double tosc_getNextDouble(tosc_message *o) {
-  const uint64_t i = ntohll(*((uint64_t *) o->marker));
+  const uint64_t i = ntohll(*((const uint64_t *) o->marker));
   o->marker += 8;
-  return *((double *) (&i));
+  return *((const double *) (&i));
 }
 
 const char *tosc_getNextString(tosc_message *o) {
@@ -200,14 +200,14 @@ static uint32_t tosc_vwrite(char *buffer, const int len,
       case 'f': {
         if (i + 4 > len) return -3;
         const float f = (float) va_arg(ap, double);
-        *((uint32_t *) (buffer+i)) = htonl(*((uint32_t *) &f));
+        *((uint32_t *) (buffer+i)) = htonl(*((const uint32_t *) &f));
         i += 4;
         break;
       }
       case 'd': {
         if (i + 8 > len) return -3;
         const double f = (double) va_arg(ap, double);
-        *((uint64_t *) (buffer+i)) = htonll(*((uint64_t *) &f));
+        *((uint64_t *) (buffer+i)) = htonll(*((const uint64_t *) &f));
         i += 8;
         break;
       }
@@ -286,8 +286,8 @@ void tosc_printOscBuffer(char *buffer, const int len) {
 }
 
 void tosc_printMessage(tosc_message *osc) {
-  printf("[%i bytes] %s %s",
-      osc->len, // the number of bytes in the OSC message
+  printf("[%d bytes] %s %s",
+      (int)osc->len, // the number of bytes in the OSC message
       tosc_getAddress(osc), // the OSC address string, e.g. "/button1"
       tosc_getFormat(osc)); // the OSC format string, e.g. "f"
 
@@ -308,7 +308,7 @@ void tosc_printMessage(tosc_message *osc) {
       }
       case 'f': printf(" %g", tosc_getNextFloat(osc)); break;
       case 'd': printf(" %g", tosc_getNextDouble(osc)); break;
-      case 'i': printf(" %d", tosc_getNextInt32(osc)); break;
+      case 'i': printf(" %d", (int)tosc_getNextInt32(osc)); break;
       case 'h': printf(" %lld", tosc_getNextInt64(osc)); break;
       case 't': printf(" %lld", tosc_getNextTimetag(osc)); break;
       case 's': printf(" %s", tosc_getNextString(osc)); break;
